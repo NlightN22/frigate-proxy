@@ -1,0 +1,5 @@
+{
+    "httpStart": "URL must started from http:// or https://",
+    "HostOrIdExist" : "Id or host must be exist",
+    "HostOrUrlExist" : "Url or host must be exist"
+}

@@ -10,12 +10,6 @@ const { combine, timestamp, align, printf, colorize,  } = format;
 // debug: 5,
 // silly: 6
 
-const consoleFormat = winston.format.printf(info => {
-  const d = new Date();
-  const timestamp = d.toLocaleTimeString();
-  return `${timestamp} ${info.level}: ${info.message}`;
-})
-
 const printFormat = printf(info => `${info.timestamp} - ${info.level}: ${info.message}`)
 
 export const logger = ((process.env.NODE_ENV === 'production')) ?

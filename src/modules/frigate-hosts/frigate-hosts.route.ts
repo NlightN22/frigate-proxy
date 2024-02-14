@@ -5,7 +5,7 @@ import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { validateRole } from "../hooks/roles.prehandler";
 import { predefinedRoles } from "../../consts";
 
-async function frigateHostsRoutes(server: FastifyInstance) {
+export async function frigateHostsRoutes(server: FastifyInstance) {
 
     // todo enable after tests
     // const allowedRoles = [
@@ -80,5 +80,3 @@ async function frigateHostsRoutes(server: FastifyInstance) {
     }, deleteHostHandler)
 
 }
-
-export default frigateHostsRoutes

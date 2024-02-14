@@ -1,5 +1,3 @@
-import { RealmAccess } from "../hooks/token.shchema";
-
 export const usersByRoleQueryJsonSchema = {
   type: 'object',
   properties: {

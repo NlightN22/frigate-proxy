@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { $ref } from "./camera.schema";
 import { createCameraHandler, deleteCameraHandler, getCameraHandler, getCamerasHandler, putCameraHandler } from "./camera.controller";
 
-async function cameraRoutes(server: FastifyInstance) {
+export async function cameraRoutes(server: FastifyInstance) {
     server.post('/', {
         schema:{
             body: $ref('createCameraSchema'),
@@ -45,5 +45,3 @@ async function cameraRoutes(server: FastifyInstance) {
         }
     }, deleteCameraHandler)
 }
-
-export default cameraRoutes

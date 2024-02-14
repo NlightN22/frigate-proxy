@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { proxyWsService } from './proxy.ws.service';
 import { proxyWsQueryJsonSchema } from './proxy.ws.schema';
 
-async function proxyWsRoute(fastify: FastifyInstance) {
+export async function proxyWsRoute(fastify: FastifyInstance) {
     fastify.get('/*', {
         schema: {
             querystring: proxyWsQueryJsonSchema,
@@ -10,5 +10,3 @@ async function proxyWsRoute(fastify: FastifyInstance) {
         websocket: true,
      }, proxyWsService);
 }
-
-export default proxyWsRoute

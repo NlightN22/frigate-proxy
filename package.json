@@ -4,10 +4,10 @@
   "description": "Proxy server for Frigate NVR",
   "main": "index.js",
   "scripts": {
+    "prod": "node dist/app.js",
     "build": "tsc",
-    "start": "tsnd --respawn --transpile-only --exit-child src/app.ts",
+    "start": "ts-node src/app.ts",
     "dev": "nodemon src/app.ts",
-    "debug": "nodemon src/app.ts",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "update-db": "prisma db push"
@@ -19,6 +19,9 @@
     "@types/node": "^20.11.16",
     "@types/openid-client": "^3.7.0",
     "@types/ws": "^8.5.10",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
+    "eslint": "^8.56.0",
     "pino-pretty": "^10.3.1",
     "prisma": "^5.9.1",
     "ts-node-dev": "^2.0.0",

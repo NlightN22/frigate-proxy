@@ -1,12 +1,12 @@
 import Fastify, { FastifyReply, FastifyRequest } from "fastify"
 import { frigateHostSchemas } from "./modules/frigate-hosts/frigate-hosts.schema"
-import frigateHostsRoutes from "./modules/frigate-hosts/frigate-hosts.route"
-import cameraRoutes from "./modules/camera/camera.route"
+import { frigateHostsRoutes } from "./modules/frigate-hosts/frigate-hosts.route"
+import { cameraRoutes } from "./modules/camera/camera.route"
 import { fastifySwagger } from "@fastify/swagger"
 import fastifySwaggerUi from "@fastify/swagger-ui"
 import { cameraSchemas } from "./modules/camera/camera.schema"
-import proxyRoute from "./modules/proxy/proxy.route"
-import proxyWsRoute from "./modules/proxy-ws/proxy.ws.route"
+import { proxyRoute } from "./modules/proxy/proxy.route"
+import { proxyWsRoute } from "./modules/proxy-ws/proxy.ws.route"
 import { logger } from "./utils/logger"
 import { proxySchemas } from "./modules/proxy/proxy.schema"
 import { proxyWsSchemas } from "./modules/proxy-ws/proxy.ws.schema"
@@ -18,15 +18,12 @@ import { selectLanguageHook } from "./modules/hooks/select.lang.prehandler"
 import { z } from "zod"
 import { makeZodI18nMap } from "zod-i18n-map"
 
-
-
 const fastify = Fastify({
 })
 
 fastify.get('/healthcheck', async function () {
     return { status: 'OK' }
 })
-
 
 async function main() {
 

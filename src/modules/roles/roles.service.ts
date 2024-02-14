@@ -3,7 +3,7 @@ import { logger } from "../../utils/logger"
 import prisma from "../../utils/prisma"
 import { sleep } from "../../utils/sleep"
 import { OIDPService, OIDPAuthState } from "../auth/oidp.service"
-import { ResponseRoleSchema } from "./roles.schema"
+import { MissingRolesSchema, ResponseRoleSchema, ResponseRolesSchema } from "./roles.schema"
 
 export class RolesService {
     private authService: OIDPService
@@ -43,6 +43,8 @@ export class RolesService {
                         if (!roles || roles.length < 1) throw new Error('Cannot get roles from OIDP')
                         else {
                             await this.saveRolesToDb(roles)
+                            const missingRoles = await this.findNonExistRolesInDb(roles)
+                            await this.deleteNonExistRoles(missingRoles)
                         }
                     }
                 }
@@ -55,14 +57,38 @@ export class RolesService {
         }
     }
 
-    async saveRolesToDb(roles: ResponseRoleSchema[]) {
-        for (const role of roles) {
-            const { id, ...rest } = role
-            await this.prismaClient.upsert({
-                where: { id: role.id },
-                update: { ...rest },
-                create: role
+    async upsertRole(role: ResponseRoleSchema) {
+        const { id, ...rest } = role
+        return this.prismaClient.upsert({
+            where: { id: role.id },
+            update: { ...rest },
+            create: role
+        })
+    }
+
+    async deleteRole(role: ResponseRoleSchema) {
+        return this.prismaClient.delete({
+            where: { id: role.id }
+        })
+    }
+
+    async saveRolesToDb(roles: ResponseRolesSchema) {
+        await Promise.all(roles.map(role => this.upsertRole(role)))
+    }
+
+    async findNonExistRolesInDb(inputRoles: ResponseRolesSchema) {
+        const rolesInDb = await this.prismaClient.findMany({ include: { cameras: true } })
+        return rolesInDb.filter(
+            dbrole => !inputRoles.some(inputRole => dbrole.id === inputRole.id)
+        )
+    }
+
+    async deleteNonExistRoles(dbRoles: MissingRolesSchema) {
+        dbRoles.map(async role => {
+            await this.prismaClient.delete({
+                where: { id: role.id }
             })
-        }
+            logger.debug(`Deleted role: ${JSON.stringify(role)}`)
+        })
     }
 }

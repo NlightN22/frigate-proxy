@@ -2,6 +2,16 @@ import { buildJsonSchemas } from "fastify-zod";
 import { z } from "zod";
 import { responseRoleSchema } from "../roles/roles.schema";
 
+export const cameraSchema = z.object({
+    id: z.string(),
+    createAt: z.date(),
+    updateAt: z.date(),
+    name: z.string(),
+    url: z.string().nullable(),
+    frigateHostId: z.string().nullable(),
+    rolesIDs: z.array(z.string()),
+  });
+
 export const cameraCore = {
     name: z.string(),
     frigateHostId: z.string().optional(),

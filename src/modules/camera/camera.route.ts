@@ -15,7 +15,7 @@ export async function cameraRoutes(server: FastifyInstance) {
     server.get('/', {
         schema:{
             response: {
-                200: $ref("getCamerasSchema")
+                200: $ref("responseCamerasSchema")
             }
         }
     }, getCamerasHandler)

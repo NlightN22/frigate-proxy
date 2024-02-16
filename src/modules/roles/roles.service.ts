@@ -2,44 +2,90 @@ import { dev } from "../../consts"
 import { logger } from "../../utils/logger"
 import prisma from "../../utils/prisma"
 import { sleep } from "../../utils/sleep"
-import { OIDPService, OIDPAuthState } from "../auth/oidp.service"
-import { MissingRolesSchema, ResponseRoleSchema, ResponseRolesSchema } from "./roles.schema"
+import OIDPService, { OIDPAuthState } from "../auth/oidp.service"
+import { ErrorApp } from "../hooks/error.handler"
+import { cameraService, oidpService } from "../shared.service"
+import { MissingRolesSchema, ResponseRoleSchema, ResponseRolesSchema, RoleCoreSchema } from "./roles.schema"
 
 export class RolesService {
-    private authService: OIDPService
-    prismaClient = prisma.roles
+    prismaClient = prisma.role
 
     constructor() {
-        this.authService = new OIDPService()
         this.updateRoles(60000)
     }
 
-    async getRoles() {
-        return await this.prismaClient.findMany()
+    async getAllRoles() {
+        return await this.prismaClient.findMany({
+            include: {
+                cameras: true
+            }
+        })
     }
 
     async getRoleOrNull(id: string) {
         return await this.prismaClient.findUnique({
-            where: { id: id }
+            where: { id: id },
+            include: { cameras: true }
         })
     }
 
     async getRoleOrError(id: string) {
         return await this.prismaClient.findUniqueOrThrow({
-            where: { id: id }
+            where: { id: id },
+            include: { cameras: true }
         })
     }
 
-    async updateRoles(updatePeriod: number = 5000) {
+    async getRolesByCamera(cameraId: string) {
+        return await this.prismaClient.findMany({
+            where: {
+                cameraIDs: {
+                    has: cameraId
+                }
+            },
+            include: { cameras: true }
+        })
+    }
+
+    async addCameras(roleId: string, inputCamerasID: string[]) {
+        if (inputCamerasID.length < 1) throw new ErrorApp('validate', 'Nothing to add')
+        const { cameraIDs } = await this.prismaClient.findUniqueOrThrow({ where: { id: roleId } })
+        const newIds = inputCamerasID.filter(inputId => !cameraIDs.includes(inputId))
+        await cameraService.addRoles(inputCamerasID, [roleId])
+        return await this.prismaClient.update({
+            where: { id: roleId },
+            data: {
+                cameraIDs: { push: newIds }
+            },
+            include: { cameras: true }
+        })
+    }
+
+    async deleteCameras(roleId: string, inputCamerasID: string[]) {
+        if (inputCamerasID.length < 1) throw new ErrorApp('validate', 'Nothing to delete')
+        const { cameraIDs } = await this.prismaClient.findUniqueOrThrow({ where: { id: roleId } })
+        const updatedIds = cameraIDs.filter(id => !inputCamerasID.some(inputId => id === inputId))
+        logger.debug(`updatedIds: ${JSON.stringify(updatedIds)}`)
+        await cameraService.deleteRoles(inputCamerasID, [roleId])
+        return await this.prismaClient.update({
+            where: { id: roleId },
+            data: {
+                cameraIDs: updatedIds
+            },
+            include: { cameras: true }
+        })
+    }
+
+    private async updateRoles(updatePeriod: number = 5000) {
         while (true && !dev.disableUpdates) {
             const startTime = Date.now()
             try {
                 if (OIDPService.authState === OIDPAuthState.Completed) {
                     logger.debug('Start updateRoles')
-                    const data = await this.authService.fetchRoles()
+                    const data = await oidpService.fetchRoles()
                     // logger.debug(JSON.stringify(data))
                     if (data) {
-                        const roles: ResponseRoleSchema[] = data.map(({ id, name }) => ({ id, name }))
+                        const roles: RoleCoreSchema[] = data.map(({ id, name }) => ({ id, name }))
                         if (!roles || roles.length < 1) throw new Error('Cannot get roles from OIDP')
                         else {
                             await this.saveRolesToDb(roles)
@@ -57,7 +103,7 @@ export class RolesService {
         }
     }
 
-    async upsertRole(role: ResponseRoleSchema) {
+    private async upsertRole(role: RoleCoreSchema) {
         const { id, ...rest } = role
         return this.prismaClient.upsert({
             where: { id: role.id },
@@ -66,29 +112,38 @@ export class RolesService {
         })
     }
 
-    async deleteRole(role: ResponseRoleSchema) {
-        return this.prismaClient.delete({
-            where: { id: role.id }
-        })
-    }
-
-    async saveRolesToDb(roles: ResponseRolesSchema) {
+    private async saveRolesToDb(roles: RoleCoreSchema[]) {
         await Promise.all(roles.map(role => this.upsertRole(role)))
+        logger.debug(`Updated roles: ${roles.length}`)
     }
 
-    async findNonExistRolesInDb(inputRoles: ResponseRolesSchema) {
+    private async findNonExistRolesInDb(inputRoles: RoleCoreSchema[]) {
         const rolesInDb = await this.prismaClient.findMany({ include: { cameras: true } })
         return rolesInDb.filter(
             dbrole => !inputRoles.some(inputRole => dbrole.id === inputRole.id)
         )
     }
 
-    async deleteNonExistRoles(dbRoles: MissingRolesSchema) {
-        dbRoles.map(async role => {
-            await this.prismaClient.delete({
-                where: { id: role.id }
-            })
-            logger.debug(`Deleted role: ${JSON.stringify(role)}`)
+    private async deleteNonExistRoles(dbRoles: MissingRolesSchema) {
+        const roleIds = dbRoles.map(role => role.id)
+        const camerasIds = this.getUniqueCamerasIds(dbRoles)
+        await this.prismaClient.deleteMany({
+            where: {
+                id: {
+                    in: roleIds
+                }
+            }
         })
+        await cameraService.deleteRoles(camerasIds, roleIds)
+        logger.debug(`Deleted roles: ${roleIds.length}`)
     }
+
+    private getUniqueCamerasIds(dbRoles: MissingRolesSchema) {
+        return [...dbRoles.reduce((acc, role) => {
+            role.cameraIDs.forEach(id => acc.add(id));
+            return acc;
+        }, new Set<string>())];
+    }
+
+
 }

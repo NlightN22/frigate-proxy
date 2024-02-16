@@ -17,6 +17,8 @@ import i18n from "./modules/translate/i18n.conf"
 import { selectLanguageHook } from "./modules/hooks/select.lang.prehandler"
 import { z } from "zod"
 import { makeZodI18nMap } from "zod-i18n-map"
+import { configRoutes } from "./modules/config/config.router"
+import { configSchemas } from "./modules/config/config.shema"
 
 const fastify = Fastify({
 })
@@ -34,7 +36,8 @@ async function main() {
         ...cameraSchemas,
         ...proxySchemas,
         ...proxyWsSchemas,
-        ...rolesSchemas
+        ...rolesSchemas,
+        ...configSchemas,
     ]) {
         fastify.addSchema(schema)
     }
@@ -62,6 +65,7 @@ async function main() {
     fastify.register(frigateHostsRoutes, { prefix: 'apiv1/frigate-hosts' })
     fastify.register(rolesRoutes, { prefix: 'apiv1/roles' })
     fastify.register(usersRoutes, { prefix: 'apiv1/users' })
+    fastify.register(configRoutes, { prefix: 'apiv1/config' })
     fastify.register(proxyRoute, { prefix: 'proxy' })
     fastify.register(require('@fastify/websocket'))
     fastify.register(proxyWsRoute, { prefix: 'proxy-ws' })

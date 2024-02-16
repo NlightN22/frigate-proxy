@@ -1,9 +1,10 @@
 import { FastifyInstance } from "fastify";
 import { createHostHandler, deleteHostByIdHandler, deleteHostHandler, getHostHandler, getHostStatusHandler, getHostsHandler, putHostHandler } from "./frigate-hosts.controller";
 import { $ref, getHostStatusByIdSchema, responseHostStatusSchema } from "./frigate-hosts.schema";
+import { predefinedRoles } from "../../consts";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { validateRole } from "../hooks/roles.prehandler";
-import { predefinedRoles } from "../../consts";
+import { adminOnlyHook } from "../hooks/auth.hook";
 
 export async function frigateHostsRoutes(server: FastifyInstance) {
 
@@ -16,6 +17,8 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
     //     await validateJwt(request, reply);
     //     await validateRole(request, reply, allowedRoles);
     // })
+
+    await adminOnlyHook(server)
     
     server.post('/', {
         schema:{

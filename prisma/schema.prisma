@@ -14,31 +14,50 @@ datasource db {
 }
 
 model Camera {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
-  name String
-  url String?
-  frigateHost FrigateHost? @relation(fields: [frigateHostId], references: [id])
-  frigateHostId String? @db.ObjectId
-  roles Roles [] @relation(fields: [rolesIDs], references: [id])
-  rolesIDs String[]
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  createAt      DateTime     @default(now())
+  updateAt      DateTime     @updatedAt
+  name          String
+  url           String?
+  frigateHost   FrigateHost? @relation(fields: [frigateHostId], references: [id], onDelete: Cascade)
+  frigateHostId String?      @db.ObjectId
+  roles         Role[]       @relation(fields: [rolesIDs], references: [id])
+  rolesIDs      String[]
+  state         Boolean?
 }
 
 model FrigateHost {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
-  name String
-  host String @unique
-  cameras Camera[]
+  name     String
+  host     String   @unique
+  enabled  Boolean? @default(true)
+  cameras  Camera[]
 }
 
-model Roles {
-  id String @id @map("_id")
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
-  name String @unique
-  cameras Camera[] @relation(fields: [cameraIDs], references: [id])
+model Role {
+  id        String   @id @map("_id")
+  createAt  DateTime @default(now())
+  updateAt  DateTime @updatedAt
+  name      String   @unique
+  cameras   Camera[] @relation(fields: [cameraIDs], references: [id])
   cameraIDs String[] @db.ObjectId
+}
+
+model OIDPsession {
+  id                 Int    @id @map("_id")
+  access_token       String @unique
+  expires_in         Int
+  refresh_expires_in Int
+  refresh_token      String
+  token_type         String
+}
+
+model AppSettings {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  key       String  @unique
+  value     String
+  encrypted Boolean
+  name      String?
 }

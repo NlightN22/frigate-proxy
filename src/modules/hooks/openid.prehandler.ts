@@ -1,9 +1,10 @@
 import { FastifyReply, FastifyRequest, } from "fastify";
 import { Issuer } from "openid-client";
-import { OIDP } from "../../consts";
 import { OIDPUrls } from "../auth/oidp.urls";
-import { User } from "../users/users.schema";
 import { logger } from "../../utils/logger";
+import { configService } from "../shared.service";
+import { oIDPSettings } from "../config/oidp.settings";
+import { ErrorApp } from "./error.handler";
 
 export interface UserInfo {
   sub: string
@@ -15,18 +16,36 @@ export interface UserInfo {
   email: string
 }
 
+interface OpenIdPrehandlerConfig {
+  realmURL: string,
+  clientId: string,
+  clientSecret: string,
+}
+
+async function getConfig() {
+  const config: OpenIdPrehandlerConfig = {
+    clientId: (await configService.getEncryptedConfig(oIDPSettings.clientId.key)).value,
+    clientSecret: (await configService.getEncryptedConfig(oIDPSettings.clientSecret.key)).value,
+    realmURL: (await configService.getEncryptedConfig(oIDPSettings.oidpRealmUrl.key)).value,
+  }
+  return config
+}
+
 async function getOpenIdClient() {
-  const authUrl = `${OIDP.url.toString()}${OIDPUrls.openidConfiguration}`
+  const config = await getConfig()
+  if (!config) throw new ErrorApp('internal','Cannot get OpenIdPrehandlerConfig')
+  const url = new URL(config.realmURL)
+  const authUrl = `${url.toString()}${OIDPUrls.openidConfiguration}`
   const issuer = await Issuer.discover(authUrl)
   const client = new issuer.Client({
-    'client_id': OIDP.clientID,
-    'client_secret': OIDP.clientSecret,
+    'client_id': config.clientId,
+    'client_secret': config.clientSecret,
   });
 
   return client;
 }
 
-export async function validateToken(request:FastifyRequest, reply: FastifyReply) {
+export async function validateToken(request: FastifyRequest, reply: FastifyReply) {
   try {
     const authHeader = request.headers.authorization;
     if (!authHeader) {

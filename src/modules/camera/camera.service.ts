@@ -1,53 +1,126 @@
+import { Camera } from "@prisma/client";
 import prisma from "../../utils/prisma";
-import { getFrigateHostById, getFrigateHostOrNull } from "../frigate-hosts/frigate-hosts.service";
 import { ErrorApp } from "../hooks/error.handler";
+import { frigateHostsService } from "../shared.service";
 import { CreateCameraSchema, UpdateCameraSchema } from "./camera.schema";
+import { logger } from "../../utils/logger";
 
 
-const prismaClient = prisma.camera
+class CameraService {
+    private prismaClient = prisma.camera
 
-export async function createCamera(input: CreateCameraSchema) {
-    if (input.frigateHostId) {
-        await getFrigateHostById(input.frigateHostId)
+    async createCamera(input: CreateCameraSchema) {
+        return await this.prismaClient.create({
+            data: input,
+            include: {
+                frigateHost: true,
+                roles: true
+            }
+        })
     }
-    return await prismaClient.create({
-        data: {
-            name: 'string;',
-            frigateHostId: 'string ',
-        }
-    })
-}
 
-export async function getCameras() {
-    return await prismaClient.findMany()
-}
-export async function getCamera(id: string) {
-    return await prismaClient.findUniqueOrThrow({
-        where: {
-            id: id
-        }
-    })
-}
-export async function editCamera(input: UpdateCameraSchema) {
-    const { id, ...rest } = input
-    return await prismaClient.update({
-        where: {
-            id: id
-        },
-        data: rest
-    })
-}
-
-export async function deleteCamera(id: string) {
-    const camera = await getCamera(id)
-    let host
-    if (camera.frigateHostId) {
-        host = await getFrigateHostOrNull(camera.frigateHostId)
+    async getAllCameras() {
+        return await this.prismaClient.findMany({
+            include: {
+                frigateHost: true,
+                roles: true
+            }
+        })
     }
-    if (host) throw new ErrorApp('validate', 'Cannot delete frigate camera. Host is exist')
-    return await prismaClient.delete({
-        where: {
-            id: id
+    async getCamerasByIds(cameraIds: string[]) {
+        return await this.prismaClient.findMany({
+            where: {
+                id: { in: cameraIds }
+            },
+            include: {
+                frigateHost: true,
+                roles: true
+            }
+        })
+    }
+
+    async getCamera(id: string) {
+        return await this.prismaClient.findUniqueOrThrow({
+            where: {
+                id: id
+            },
+            include: {
+                frigateHost: true,
+                roles: true
+            }
+        })
+    }
+
+    async editCamera(input: UpdateCameraSchema) {
+        const { id, ...rest } = input
+        return await this.prismaClient.update({
+            where: {
+                id: id
+            },
+            data: rest
+        })
+    }
+
+    async deleteCamera(id: string) {
+        const camera = await this.getCamera(id)
+        let host
+        if (camera.frigateHostId) {
+            host = await frigateHostsService.getFrigateHostOrNull(camera.frigateHostId)
         }
-    })
+        if (host) throw new ErrorApp('validate', 'Cannot delete frigate camera. Host is exist')
+        return await this.prismaClient.delete({
+            where: {
+                id: id
+            }
+        })
+    }
+
+    async getCamerasByRole(roleId: string) {
+        return await this.prismaClient.findMany({
+            where: {
+                rolesIDs: {
+                    has: roleId
+                }
+            }
+        })
+    }
+
+    async getCamerasByRoles(rolesIds: string[]) {
+        return await this.prismaClient.findMany({
+            where: {
+                rolesIDs: {
+                    hasSome: rolesIds
+                }
+            }
+        })
+    }
+
+    async deleteRoles(camerasId: string[], rolesId: string[]) {
+        const cameras = await this.getCamerasByIds(camerasId)
+        await Promise.all(cameras.map(async (camera) => {
+            const updatedRolesIDs = camera.rolesIDs.filter(roleId => !rolesId.includes(roleId));
+            return await this.prismaClient.update({
+                where: { id: camera.id },
+                data: { rolesIDs: updatedRolesIDs }
+            });
+        }));
+    }
+
+    async addRoles(camerasId: string[], rolesId: string[]) {
+        const cameras = await this.getCamerasByIds(camerasId)
+        await Promise.all(cameras.map(camera => {
+            const updatedRolesIDs = [...new Set([...camera.rolesIDs, ...rolesId])];
+            logger.debug(`Camera add roles: ${updatedRolesIDs}`)
+            return this.prismaClient.update({
+                where: {
+                    id: camera.id
+                },
+                data: {
+                    rolesIDs: updatedRolesIDs
+                }
+            });
+        }));
+    }
 }
+
+export default CameraService

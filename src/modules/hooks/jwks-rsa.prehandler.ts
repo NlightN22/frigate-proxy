@@ -1,40 +1,67 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import jwksRsa, { expressJwtSecret } from "jwks-rsa";
-import { OIDP } from "../../consts";
+import { FastifyReply, FastifyRequest } from "fastify";
+import jwksRsa from "jwks-rsa";
 import * as jwt from 'jsonwebtoken'
-import { logger } from "../../utils/logger";
 import { TokenUser } from "./token.shchema";
+import { configService } from "../shared.service";
+import { oIDPSettings } from "../config/oidp.settings";
+import { ErrorApp } from "./error.handler";
+import { logger } from "../../utils/logger";
 
-const secretProvider = expressJwtSecret({
-    cache: true,
-    rateLimit: true,
-    jwksRequestsPerMinute: 5,
-    jwksUri: `${OIDP.url.toString()}/protocol/openid-connect/certs`,
-})
+const getOidpUrl = async () => {
+    try {
+        const config = await configService.getEncryptedConfig(oIDPSettings.oidpRealmUrl.key)
+        return new URL(config.value)
+    } catch {
+        return undefined
+    }
+}
 
-const jwksClient = jwksRsa({
-    jwksUri: `${OIDP.url.toString()}/protocol/openid-connect/certs`
-})
+async function initializeJwksClient() {
+    const url = await getOidpUrl()
+    if (!url) {
+        logger.warn(`Can not get URL from config when init JwksClient`)
+        return
+    }
+    const client = jwksRsa({
+        jwksUri: `${url.toString()}/protocol/openid-connect/certs`
+    })
+    return client;
+}
+
+
+let jwksClient: jwksRsa.JwksClient | undefined;
+initializeJwksClient().then(client => {
+    jwksClient = client;
+});
 
 function getKey(header, callback) {
+    if (!jwksClient) {
+        initializeJwksClient().then( client => {
+            jwksClient = client
+        })
+        if (!jwksClient){
+            callback(new ErrorApp('internal', 'JWKS client not initialized'));
+            return;
+        }
+    }
     jwksClient.getSigningKey(header.kid, (err, key) => {
         if (err) {
             callback(err, null);
             return;
         }
-        if (!key) throw Error('key does not exists')
+        if (!key) throw callback(new ErrorApp('internal', 'key does not exists'))
         let signingKey;
         if ('rsaPublicKey' in key) {
             signingKey = key.rsaPublicKey;
         } else if ('getPublicKey' in key) {
             signingKey = key.getPublicKey();
         } else {
-            callback(new Error('Unable to find a signing key.'), null);
+            callback(new ErrorApp('internal', 'Unable to find a signing key.'), null);
             return;
         }
 
         if (!signingKey) {
-            callback(new Error('Unable to find a signing key.'), null);
+            callback(new ErrorApp('internal', 'Unable to find a signing key.'), null);
             return;
         }
 
@@ -44,17 +71,27 @@ function getKey(header, callback) {
 }
 
 export async function validateJwt(request: FastifyRequest, reply: FastifyReply) {
+    const url = await getOidpUrl();
+    if (!url) {
+        logger.error(`Cannot read OIDP url from config. Pass`)
+        return
+    }
     const token = request.headers.authorization?.split(' ')[1]
     if (!token) {
         reply.code(401).send({ error: 'No token provided.' });
         return;
     }
 
+    if (!jwksClient) {
+        logger.warn('JWKS client not initialized. Initialize...')
+        jwksClient = await initializeJwksClient()
+    }
+
     // logger.debug(`token: ${JSON.stringify(token)}`)
     try {
         const decoded: TokenUser = await new Promise((resolve, reject) => {
             jwt.verify(token, getKey, {
-                issuer: OIDP.url.toString(),
+                issuer: url.toString(),
                 algorithms: ['RS256']
             }, (err, decoded) => {
                 if (err) {
@@ -76,6 +113,10 @@ export async function validateJwt(request: FastifyRequest, reply: FastifyReply) 
             roles: decoded.realm_access.roles
         }
     } catch (err) {
+        if (err instanceof Error) {
+            logger.error(err.message)
+        }
         reply.code(401).send({ error: 'Unauthorized: Invalid token.' });
     }
 }
+

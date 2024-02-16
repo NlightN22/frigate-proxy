@@ -1,17 +1,11 @@
-import { OIDPService } from "../auth/oidp.service"
+import { oidpService } from "../shared.service"
 
 export class UserService {
-    private authService: OIDPService
-
-    constructor () {
-        this.authService = new OIDPService()
-    }
-
     async getUsers() {
-        return await this.authService.fetchUsers()
+        return await oidpService.fetchUsers()
     }
 
     async getUsersByRole(roleName: string) {
-        return await this.authService.fetchUsersByRole(roleName)
+        return await oidpService.fetchUsersByRole(roleName)
     }
 }

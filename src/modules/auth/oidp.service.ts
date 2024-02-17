@@ -7,8 +7,8 @@ import prisma from "../../utils/prisma"
 import { JwtPayload, jwtDecode } from "jwt-decode"
 import { sleep } from "../../utils/sleep"
 import { ErrorApp } from "../hooks/error.handler"
-import { configService } from "../shared.service"
 import { oIDPSettings } from "../config/oidp.settings"
+import ConfigService from "../config/config.service"
 
 type Authenticate = {
     access_token: string
@@ -33,6 +33,7 @@ interface OIDPConfig {
 }
 
 class OIDPService {
+    configService = new ConfigService()
     id: UUID
     private static _authenticate: Authenticate | null
     private static _oidpConfig: OIDPConfig | undefined
@@ -47,6 +48,7 @@ class OIDPService {
 
     constructor() {
         this.init()
+        logger.debug(`OIDPService initialized`)
     }
 
     async fetchRoles() {
@@ -83,11 +85,11 @@ class OIDPService {
                 const { id, ...rest } = authDb
                 OIDPService._authenticate = rest
                 OIDPService._authState = OIDPAuthState.Completed
+                this.setRefreshTokenTimeout()
             } else {
                 logger.debug("OIDPService get new token...")
-                await this.getNewToken()
+                this.getNewToken()
             }
-            this.setRefreshTokenTimeout()
         } catch (e) {
             logger.error(`ERROR! OIDPService not started: ${e.message}`)
         }
@@ -95,11 +97,11 @@ class OIDPService {
 
     private async getConfig() {
         const config: OIDPConfig = {
-            clientId: (await configService.getEncryptedConfig(oIDPSettings.clientId.key)).value,
-            clientSecret: (await configService.getEncryptedConfig(oIDPSettings.clientSecret.key)).value,
-            clientUsername: (await configService.getEncryptedConfig(oIDPSettings.clientUsername.key)).value,
-            clientPassword: (await configService.getEncryptedConfig(oIDPSettings.clientPassword.key)).value,
-            clientURL: (await configService.getEncryptedConfig(oIDPSettings.oidpRealmUrl.key)).value,
+            clientId: (await this.configService.getEncryptedConfig(oIDPSettings.clientId.key)).value,
+            clientSecret: (await this.configService.getEncryptedConfig(oIDPSettings.clientSecret.key)).value,
+            clientUsername: (await this.configService.getEncryptedConfig(oIDPSettings.clientUsername.key)).value,
+            clientPassword: (await this.configService.getEncryptedConfig(oIDPSettings.clientPassword.key)).value,
+            clientURL: (await this.configService.getEncryptedConfig(oIDPSettings.oidpRealmUrl.key)).value,
         }
         return config
     }

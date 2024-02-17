@@ -1,13 +1,16 @@
 import { Camera } from "@prisma/client";
 import prisma from "../../utils/prisma";
 import { ErrorApp } from "../hooks/error.handler";
-import { frigateHostsService } from "../shared.service";
 import { CreateCameraSchema, UpdateCameraSchema } from "./camera.schema";
 import { logger } from "../../utils/logger";
 
 
 class CameraService {
     private prismaClient = prisma.camera
+
+    constructor () {
+        logger.debug(`FrigateHostsService initialized`)
+    }
 
     async createCamera(input: CreateCameraSchema) {
         return await this.prismaClient.create({
@@ -57,7 +60,11 @@ class CameraService {
             where: {
                 id: id
             },
-            data: rest
+            data: rest,
+            include: {
+                frigateHost: true,
+                roles: true
+            }
         })
     }
 
@@ -65,12 +72,16 @@ class CameraService {
         const camera = await this.getCamera(id)
         let host
         if (camera.frigateHostId) {
-            host = await frigateHostsService.getFrigateHostOrNull(camera.frigateHostId)
+            // host = await frigateHostsService.getFrigateHostOrNull(camera.frigateHostId)
         }
         if (host) throw new ErrorApp('validate', 'Cannot delete frigate camera. Host is exist')
         return await this.prismaClient.delete({
             where: {
                 id: id
+            },
+            include: {
+                frigateHost: true,
+                roles: true
             }
         })
     }

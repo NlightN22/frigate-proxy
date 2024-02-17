@@ -1,8 +1,11 @@
 import { FastifyInstance } from "fastify";
 import { $ref } from "./camera.schema";
-import { createCameraHandler, deleteCameraHandler, getCameraHandler, getCamerasHandler, putCameraHandler } from "./camera.controller";
+import CameraController from "./camera.controller";
 
-export async function cameraRoutes(server: FastifyInstance) {
+export async function cameraRoutes (server: FastifyInstance) {
+
+    const controller = new CameraController()
+
     server.post('/', {
         schema:{
             body: $ref('createCameraSchema'),
@@ -10,7 +13,7 @@ export async function cameraRoutes(server: FastifyInstance) {
                 201: $ref("responseCameraSchema")
             }
         }
-    }, createCameraHandler)
+    }, controller.createCameraHandler)
 
     server.get('/', {
         schema:{
@@ -18,7 +21,7 @@ export async function cameraRoutes(server: FastifyInstance) {
                 200: $ref("responseCamerasSchema")
             }
         }
-    }, getCamerasHandler)
+    }, controller.getCamerasHandler)
 
     server.get('/:id', {
         schema:{
@@ -26,7 +29,7 @@ export async function cameraRoutes(server: FastifyInstance) {
                 200: $ref("responseCameraSchema")
             }
         }
-    }, getCameraHandler)
+    }, controller.getCameraHandler)
     
     server.put('/', {
         schema:{
@@ -35,7 +38,7 @@ export async function cameraRoutes(server: FastifyInstance) {
                 201: $ref("responseCameraSchema")
             }
         }
-    }, putCameraHandler)
+    }, controller.putCameraHandler)
     
     server.delete('/:id', {
         schema:{
@@ -43,5 +46,5 @@ export async function cameraRoutes(server: FastifyInstance) {
                 200: $ref("responseCameraSchema")
             }
         }
-    }, deleteCameraHandler)
+    }, controller.deleteCameraHandler)
 }

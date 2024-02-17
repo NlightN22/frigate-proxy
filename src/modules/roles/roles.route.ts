@@ -1,8 +1,9 @@
 import { FastifyInstance } from "fastify"
-import { deleteRoleCamerasHandler, getRoleHandler, getRolesHandler, updateRoleCamerasHandler } from "./roles.controller"
 import { $ref, getRoleByIdSchema } from "./roles.schema"
+import RolesController from "./roles.controller"
 
 export async function rolesRoutes(server: FastifyInstance) {
+    const controller = new RolesController()
     server.put('/:id/cameras', {
         schema:{
             params: getRoleByIdSchema,
@@ -11,7 +12,7 @@ export async function rolesRoutes(server: FastifyInstance) {
                 // 201: $ref("responseRoleSchema")
             }
         }
-    }, updateRoleCamerasHandler)
+    }, controller.updateRoleCamerasHandler)
     server.delete('/:id/cameras', {
         schema:{
             params: getRoleByIdSchema,
@@ -20,14 +21,14 @@ export async function rolesRoutes(server: FastifyInstance) {
                 // 201: $ref("responseRoleSchema")
             }
         }
-    }, deleteRoleCamerasHandler)
+    }, controller.deleteRoleCamerasHandler)
     server.get('/', {
         schema: {
             response: {
                 200: $ref('responseRolesSchema')
             }
         }
-    }, getRolesHandler)
+    }, controller.getRolesHandler)
     server.get('/:id', {
         schema: {
             params: getRoleByIdSchema,
@@ -35,7 +36,7 @@ export async function rolesRoutes(server: FastifyInstance) {
                 200: $ref('responseRolesAndCamerasSchema')
             }
         }
-    }, getRoleHandler)
+    }, controller.getRoleHandler)
 
 }
 

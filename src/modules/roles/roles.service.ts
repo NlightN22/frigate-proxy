@@ -3,15 +3,18 @@ import { logger } from "../../utils/logger"
 import prisma from "../../utils/prisma"
 import { sleep } from "../../utils/sleep"
 import OIDPService, { OIDPAuthState } from "../auth/oidp.service"
+import CameraService from "../camera/camera.service"
 import { ErrorApp } from "../hooks/error.handler"
-import { cameraService, oidpService } from "../shared.service"
 import { MissingRolesSchema, ResponseRoleSchema, ResponseRolesSchema, RoleCoreSchema } from "./roles.schema"
 
-export class RolesService {
+class RolesService {
     prismaClient = prisma.role
+    cameraService = new CameraService()
+    oidpService = new OIDPService()
 
     constructor() {
         this.updateRoles(60000)
+        logger.debug(`ConfigService initialized`)
     }
 
     async getAllRoles() {
@@ -51,7 +54,7 @@ export class RolesService {
         if (inputCamerasID.length < 1) throw new ErrorApp('validate', 'Nothing to add')
         const { cameraIDs } = await this.prismaClient.findUniqueOrThrow({ where: { id: roleId } })
         const newIds = inputCamerasID.filter(inputId => !cameraIDs.includes(inputId))
-        await cameraService.addRoles(inputCamerasID, [roleId])
+        await this.cameraService.addRoles(inputCamerasID, [roleId])
         return await this.prismaClient.update({
             where: { id: roleId },
             data: {
@@ -66,7 +69,7 @@ export class RolesService {
         const { cameraIDs } = await this.prismaClient.findUniqueOrThrow({ where: { id: roleId } })
         const updatedIds = cameraIDs.filter(id => !inputCamerasID.some(inputId => id === inputId))
         logger.debug(`updatedIds: ${JSON.stringify(updatedIds)}`)
-        await cameraService.deleteRoles(inputCamerasID, [roleId])
+        await this.cameraService.deleteRoles(inputCamerasID, [roleId])
         return await this.prismaClient.update({
             where: { id: roleId },
             data: {
@@ -82,7 +85,7 @@ export class RolesService {
             try {
                 if (OIDPService.authState === OIDPAuthState.Completed) {
                     logger.debug('Start updateRoles')
-                    const data = await oidpService.fetchRoles()
+                    const data = await this.oidpService.fetchRoles()
                     // logger.debug(JSON.stringify(data))
                     if (data) {
                         const roles: RoleCoreSchema[] = data.map(({ id, name }) => ({ id, name }))
@@ -134,7 +137,7 @@ export class RolesService {
                 }
             }
         })
-        await cameraService.deleteRoles(camerasIds, roleIds)
+        await this.cameraService.deleteRoles(camerasIds, roleIds)
         logger.debug(`Deleted roles: ${roleIds.length}`)
     }
 
@@ -144,6 +147,6 @@ export class RolesService {
             return acc;
         }, new Set<string>())];
     }
-
-
 }
+
+export default RolesService

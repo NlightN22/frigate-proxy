@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildJsonSchemas } from "fastify-zod";
-import { cameraSchema, responseCameraSchema } from "../camera/camera.schema";
+import { responseCameraCoreSchema } from "../camera/camera.schema";
 
 const roleSchema = z.object({
     id: z.string(),
@@ -10,14 +10,36 @@ const roleSchema = z.object({
     cameraIDs: z.string().array(),
 });
 
-const missingRolesSchema = z.array(
-    z.intersection(
-        z.object({
-            cameras: z.array(cameraSchema),
-        }),
-        roleSchema
-    )
-);
+const cameraSchema = z.object({
+    id: z.string(),
+    createAt: z.date(),
+    updateAt: z.date(),
+    name: z.string(),
+    url: z.string().nullable(),
+    frigateHostId: z.string().nullable(),
+    rolesIDs: z.array(z.string()),
+    state: z.boolean().nullable(),
+});
+
+const missingRoleSchema = z.object({
+    id: z.string(),
+    createAt: z.date(),
+    updateAt: z.date(),
+    name: z.string(),
+    cameraIDs: z.array(z.string()),
+    cameras: z.array(cameraSchema),
+});
+
+const missingRolesSchema = z.array(missingRoleSchema);
+
+// const missingRolesSchema = z.array(
+//     z.intersection(
+//         z.object({
+//             cameras: z.array(z.object(responseCameraCoreSchema)),
+//         }),
+//         roleSchema
+//     )
+// );
 
 export const getRoleByIdSchema = {
     type: 'object',

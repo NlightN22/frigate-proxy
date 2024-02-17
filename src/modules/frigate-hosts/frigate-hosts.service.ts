@@ -21,6 +21,7 @@ class FrigateHostsService {
     constructor() {
         this.updateCamerasFromHost()
         this.updateCamerasState()
+        logger.debug(`FrigateHostsService initialized`)
     }
 
     private async fetcher<T>(url: string): Promise<T> {

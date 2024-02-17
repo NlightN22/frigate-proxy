@@ -20,6 +20,11 @@ type ConfigObject<T> = {
 
 class ConfigService {
     prismaClient = prisma.appSettings
+
+    constructor() {
+        logger.debug(`ConfigService initialized`)
+    }
+
     async saveConfig(config: PutConfigSchema) {
         const { value, ...withKey } = config
         const finalValue = config.encrypted ? await this.encrypt(config.value) : config.value

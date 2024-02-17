@@ -13,7 +13,7 @@ lerna-debug.log*
 
 # OS
 .DS_Store
-.env
+.env*
 
 #old files
 old.*
@@ -21,6 +21,7 @@ old.*
 # Tests
 /coverage
 /.nyc_output
+.tap
 
 # IDEs and editors
 /.idea

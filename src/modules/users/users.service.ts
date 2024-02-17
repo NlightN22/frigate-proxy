@@ -1,11 +1,17 @@
-import { oidpService } from "../shared.service"
+import { logger } from "../../utils/logger"
+import OIDPService from "../auth/oidp.service"
 
 export class UserService {
+    oidpService = new OIDPService()
+
+    constructor () {
+        logger.debug(`UserService initialized`)
+    }
     async getUsers() {
-        return await oidpService.fetchUsers()
+        return await this.oidpService.fetchUsers()
     }
 
     async getUsersByRole(roleName: string) {
-        return await oidpService.fetchUsersByRole(roleName)
+        return await this.oidpService.fetchUsersByRole(roleName)
     }
 }

@@ -1,7 +1,9 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { withErrorHandler } from "../hooks/error.handler";
-import { configService } from "../shared.service";
 import { PutConfigSchema, putConfigSchema } from "./config.shema";
+import ConfigService from "./config.service";
+
+const configService = new ConfigService()
 
 export const putConfigController = withErrorHandler(async (req: FastifyRequest<{
     Body: PutConfigSchema

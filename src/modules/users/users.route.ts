@@ -5,14 +5,14 @@ import { usersByRoleQueryJsonSchema } from "./users.schema";
 import { validateToken } from "../hooks/openid.prehandler";
 
 export async function usersRoutes(fastify: FastifyInstance) {
-    const userService = new UserService
+    const userService = new UserService()
     fastify.get('/', {
-        preHandler: validateToken,
+        // preHandler: validateToken,
     },
-        async () => await userService.getUsers())
+        async (request, reply) => await userService.getUsers())
 
     fastify.get('/byrole', {
-        preHandler: validateToken,
+        // preHandler: validateToken,
         schema: {
             querystring: usersByRoleQueryJsonSchema,
         }
@@ -21,7 +21,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
             try {
                 const { method, body, query, params } = request;
                 const { roleName } = query as any
-                if (roleName) return await userService.getUsersByRole(roleName)
+                // if (roleName) return await userService.getUsersByRole(roleName)
             } catch (e) {
                 logger.error(e)
             }

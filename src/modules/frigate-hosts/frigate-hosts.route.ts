@@ -1,16 +1,17 @@
 import { FastifyInstance } from "fastify";
-import { createHostHandler, deleteHostByIdHandler, deleteHostHandler, getHostHandler, getHostStatusHandler, getHostsHandler, putHostHandler } from "./frigate-hosts.controller";
 import { $ref, getHostStatusByIdSchema, responseHostStatusSchema } from "./frigate-hosts.schema";
 import { predefinedRoles } from "../../consts";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { validateRole } from "../hooks/roles.prehandler";
-import { adminOnlyHook } from "../hooks/auth.hook";
+import FrigateHostController from "./frigate-hosts.controller";
 
 export async function frigateHostsRoutes(server: FastifyInstance) {
 
+    const controller = new FrigateHostController()
+
     // todo enable after tests
     // const allowedRoles = [
-    //     predefinedRoles.admin
+    //     'user',
     // ]
     // server.decorateRequest('user')
     // server.addHook('preHandler', async (request, reply) => {
@@ -18,8 +19,6 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
     //     await validateRole(request, reply, allowedRoles);
     // })
 
-    await adminOnlyHook(server)
-    
     server.post('/', {
         schema:{
             body: $ref('createHostSchema'),
@@ -27,7 +26,7 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
                 201: $ref("responseHostSchema")
             }
         }
-    }, createHostHandler)
+    }, controller.createHostHandler)
 
     server.get('/', {
         schema:{
@@ -35,7 +34,7 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
                 200: $ref("getHostsSchema")
             }
         }
-    }, getHostsHandler)
+    }, controller.getHostsHandler)
 
     server.get('/:id', {
         schema:{
@@ -44,7 +43,7 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
                 200: $ref("responseHostSchema")
             }
         }
-    }, getHostHandler)
+    }, controller.getHostHandler)
 
     server.get('/:id/status', {
         schema:{
@@ -53,7 +52,7 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
                 200: $ref('responseHostStatusSchema')
             },
         }
-    }, getHostStatusHandler)
+    }, controller.getHostStatusHandler)
 
     server.delete('/:id', {
         schema:{
@@ -62,7 +61,7 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
                 200: $ref("responseHostSchema")
             }
         }
-    }, deleteHostByIdHandler)
+    }, controller.deleteHostByIdHandler)
     
     server.put('/', {
         schema:{
@@ -71,7 +70,7 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
                 201: $ref("responseHostSchema")
             }
         }
-    }, putHostHandler)
+    }, controller.putHostHandler)
     
     server.delete('/', {
         schema:{
@@ -80,6 +79,6 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
                 200: $ref("responseHostSchema")
             }
         }
-    }, deleteHostHandler)
+    }, controller.deleteHostHandler)
 
 }

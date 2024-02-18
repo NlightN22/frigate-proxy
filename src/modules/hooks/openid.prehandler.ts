@@ -1,10 +1,10 @@
 import { FastifyReply, FastifyRequest, } from "fastify";
 import { Issuer } from "openid-client";
-import { OIDPUrls } from "../auth/oidp.urls";
+import { OIDPUrls } from "../oidp/oidp.urls";
 import { logger } from "../../utils/logger";
-import { configService } from "../shared.service";
-import { oIDPSettings } from "../config/oidp.settings";
+import { oidpSettingsKeys } from "../config/oidp.settings";
 import { ErrorApp } from "./error.handler";
+import ConfigService from "../config/config.service";
 
 export interface UserInfo {
   sub: string
@@ -23,10 +23,11 @@ interface OpenIdPrehandlerConfig {
 }
 
 async function getConfig() {
+  const configService = new ConfigService()
   const config: OpenIdPrehandlerConfig = {
-    clientId: (await configService.getEncryptedConfig(oIDPSettings.clientId.key)).value,
-    clientSecret: (await configService.getEncryptedConfig(oIDPSettings.clientSecret.key)).value,
-    realmURL: (await configService.getEncryptedConfig(oIDPSettings.oidpRealmUrl.key)).value,
+    clientId: (await configService.getEncryptedConfig(oidpSettingsKeys.clientId)).value,
+    clientSecret: (await configService.getEncryptedConfig(oidpSettingsKeys.clientSecret)).value,
+    realmURL: (await configService.getEncryptedConfig(oidpSettingsKeys.realmUrl)).value,
   }
   return config
 }

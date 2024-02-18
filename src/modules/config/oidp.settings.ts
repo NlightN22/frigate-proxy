@@ -1,22 +1,48 @@
-export const oIDPSettings = {
-    clientId: {
-        name: 'OIDP Client ID',
-        key: 'OIDP_CLIENT_ID',
-    },
-    clientSecret: {
-        name: 'OIDP Client secret',
-        key: 'OIDP_CLIENT_SECRET',
-    },
-    clientUsername: {
-        name: 'OIDP Client username',
-        key: 'OIDP_CLIENT_USERNAME',
-    },
-    clientPassword: {
-        name: 'OIDP Client password',
-        key: 'OIDP_CLIENT_PASSWORD',
-    },
-    oidpRealmUrl: {
-        name: 'OIDP realm URL path',
-        key: 'OIDP_REALM_PATH',
-    },
+import { MapSettings } from "./config.service";
+
+
+export const oidpSettingsKeys = {
+    clientId: 'oidpClientId',
+    clientSecret: 'oidpClientSecret',
+    clientUsername: 'oidpClientUsername',
+    clientPassword: 'oidpClientPassword',
+    realmUrl: 'oidpRealmUrl',
 }
+
+export const oIDPSettings: MapSettings = [
+    [
+        oidpSettingsKeys.clientId,
+        {
+            description: 'OIDP Client ID',
+            encrypted: false,
+        }
+    ],
+    [
+        oidpSettingsKeys.clientSecret,
+        {
+            description: 'OIDP Client secret',
+            encrypted: true,
+        }
+    ],
+    [
+        oidpSettingsKeys.clientUsername,
+        {
+            description: 'OIDP Client username',
+            encrypted: false,
+        },
+    ],
+    [
+        oidpSettingsKeys.clientPassword,
+        {
+            description: 'OIDP Client password',
+            encrypted: true,
+        },
+    ],
+    [
+        oidpSettingsKeys.realmUrl,
+        {
+            description: 'OIDP realm URL path',
+            encrypted: false,
+        },
+    ]
+]

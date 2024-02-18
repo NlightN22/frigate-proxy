@@ -55,9 +55,9 @@ model OIDPsession {
 }
 
 model AppSettings {
-  id        String  @id @default(auto()) @map("_id") @db.ObjectId
-  key       String  @unique
-  value     String
-  encrypted Boolean
-  name      String?
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  key         String  @unique
+  value       String
+  encrypted   Boolean
+  description String?
 }

@@ -5,7 +5,7 @@ import { FastifyInstance } from 'fastify';
 import * as FrigateHostsModule from '../modules/frigate-hosts/frigate-hosts.service';
 import * as CamerasModule from '../modules/camera/camera.service';
 import * as RolesModule from '../modules/roles/roles.service';
-import * as OIDPModule from '../modules/auth/oidp.service';
+import * as OIDPModule from '../modules/oidp/oidp.service';
 
 test('get `/healthcheck` route', async (t) => {
 

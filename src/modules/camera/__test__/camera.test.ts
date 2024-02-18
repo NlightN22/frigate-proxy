@@ -3,7 +3,7 @@ import { ImportMock } from 'ts-mock-imports';
 import buildServer from '../../../server';
 import { faker, ur } from '@faker-js/faker'
 
-import * as oidpService from '../../auth/oidp.service';
+import * as oidpService from '../../oidp/oidp.service';
 import * as frigateHostsService from '../..//frigate-hosts/frigate-hosts.service';
 import * as rolesService from '../../roles/roles.service';
 import * as cameraService from '../../camera/camera.service';

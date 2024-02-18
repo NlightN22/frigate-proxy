@@ -2,14 +2,15 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import jwksRsa from "jwks-rsa";
 import * as jwt from 'jsonwebtoken'
 import { TokenUser } from "./token.shchema";
-import { configService } from "../shared.service";
-import { oIDPSettings } from "../config/oidp.settings";
+import { oidpSettingsKeys } from "../config/oidp.settings";
 import { ErrorApp } from "./error.handler";
 import { logger } from "../../utils/logger";
+import ConfigService from "../config/config.service";
 
 const getOidpUrl = async () => {
     try {
-        const config = await configService.getEncryptedConfig(oIDPSettings.oidpRealmUrl.key)
+        const configService = new ConfigService()
+        const config = await configService.getEncryptedConfig(oidpSettingsKeys.realmUrl)
         return new URL(config.value)
     } catch {
         return undefined

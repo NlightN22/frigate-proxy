@@ -1,16 +1,35 @@
 import { FastifyInstance } from "fastify";
-import { getConfigsController, getSettingController, getSettingsController,  putConfigController } from "./confg.controller";
-import { getConfigSchema } from "./config.shema";
+import { getConfigsController, getConfigController, putConfigController, putConfigsController } from "./confg.controller";
+import { $ref, paramConfigSchema } from "./config.shema";
 
 export async function configRoutes(server: FastifyInstance) {
 
-    server.get('/settings', {}, getSettingsController)
-    server.get('/', {}, getConfigsController)
+    // TODO delete
+    // server.get('/settings', {}, getSettingsController)
+
+    server.get('/', {
+        schema: {
+            response: { 200: $ref('responseConfigsSchema')},
+        }
+    }, getConfigsController)
     server.get('/:key', {
         schema: {
-            params: getConfigSchema
+            params: paramConfigSchema,
+            response:{ 200: $ref('responseConfigSchema')}
         }
-    }, getSettingController)
-    server.put('/', {
+    }, getConfigController)
+    server.put('/:key', {
+        schema: {
+            params: paramConfigSchema,
+            response:{ 200: $ref('responseConfigSchema')}
+        }
     }, putConfigController)
+    server.put('/', {
+        schema: {
+            body: $ref('putConfigsSchema'),
+            response: {
+                201: $ref('responseConfigsSchema'),
+            }
+        }
+    }, putConfigsController)
 }

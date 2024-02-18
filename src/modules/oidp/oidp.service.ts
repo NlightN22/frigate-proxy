@@ -7,7 +7,7 @@ import prisma from "../../utils/prisma"
 import { JwtPayload, jwtDecode } from "jwt-decode"
 import { sleep } from "../../utils/sleep"
 import { ErrorApp } from "../hooks/error.handler"
-import { oIDPSettings } from "../config/oidp.settings"
+import { oidpSettingsKeys } from "../config/oidp.settings"
 import ConfigService from "../config/config.service"
 
 type Authenticate = {
@@ -97,11 +97,11 @@ class OIDPService {
 
     private async getConfig() {
         const config: OIDPConfig = {
-            clientId: (await this.configService.getEncryptedConfig(oIDPSettings.clientId.key)).value,
-            clientSecret: (await this.configService.getEncryptedConfig(oIDPSettings.clientSecret.key)).value,
-            clientUsername: (await this.configService.getEncryptedConfig(oIDPSettings.clientUsername.key)).value,
-            clientPassword: (await this.configService.getEncryptedConfig(oIDPSettings.clientPassword.key)).value,
-            clientURL: (await this.configService.getEncryptedConfig(oIDPSettings.oidpRealmUrl.key)).value,
+            clientId: (await this.configService.getEncryptedConfig(oidpSettingsKeys.clientId)).value,
+            clientSecret: (await this.configService.getEncryptedConfig(oidpSettingsKeys.clientSecret)).value,
+            clientUsername: (await this.configService.getEncryptedConfig(oidpSettingsKeys.clientUsername)).value,
+            clientPassword: (await this.configService.getEncryptedConfig(oidpSettingsKeys.clientPassword)).value,
+            clientURL: (await this.configService.getEncryptedConfig(oidpSettingsKeys.realmUrl)).value,
         }
         return config
     }

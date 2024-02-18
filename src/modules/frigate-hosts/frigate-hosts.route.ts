@@ -1,6 +1,5 @@
 import { FastifyInstance } from "fastify";
 import { $ref, getHostStatusByIdSchema, responseHostStatusSchema } from "./frigate-hosts.schema";
-import { predefinedRoles } from "../../consts";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { validateRole } from "../hooks/roles.prehandler";
 import FrigateHostController from "./frigate-hosts.controller";

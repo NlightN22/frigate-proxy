@@ -17,7 +17,7 @@ import { configRoutes } from "./modules/config/config.router"
 import { proxyRoute } from "./modules/proxy/proxy.route"
 import websocket from '@fastify/websocket'
 import { proxyWsRoute } from "./modules/proxy-ws/proxy.ws.route"
-
+import cors from '@fastify/cors'
 
 declare module 'fastify' {
     export interface FastifyRequest {
@@ -29,6 +29,10 @@ function buildServer() {
 
     const fastify = Fastify({
     })
+
+    fastify.register(cors, {
+        origin: "*",
+      })
 
     fastify.get('/healthcheck', async function () {
         return { status: 'OK' }

@@ -1,3 +1,4 @@
+import { hostURL } from "./consts"
 import buildServer from "./server"
 import { logger } from "./utils/logger"
 
@@ -5,9 +6,10 @@ const server = buildServer()
 
 async function main() {
     try {
+        
         const fastifyOptions = {
-            port: 4000,
-            host: 'localhost'
+            port: Number(hostURL.port),
+            host: hostURL.hostname
         }
         await server.listen(fastifyOptions)
         logger.info(`Server ready at ${JSON.stringify(fastifyOptions)}`)

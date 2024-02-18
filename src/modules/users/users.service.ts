@@ -1,5 +1,5 @@
 import { logger } from "../../utils/logger"
-import OIDPService from "../auth/oidp.service"
+import OIDPService from "../oidp/oidp.service"
 
 export class UserService {
     oidpService = new OIDPService()

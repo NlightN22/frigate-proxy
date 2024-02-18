@@ -1,12 +1,13 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { logger } from "../../utils/logger";
-import { configService } from "../shared.service";
-import { AppSetting } from "../config/config.settings";
+import { AppSetting, appSettingsKeys } from "../config/app.settings";
 import { ErrorApp } from "./error.handler";
+import ConfigService from "../config/config.service";
 
 const getAdminRole = async () => {
     try {
-        return (await configService.getEncryptedConfig(AppSetting.adminRole.key)).value
+        const configService = new ConfigService()
+        return (await configService.getEncryptedConfig(appSettingsKeys.adminRole)).value
     } catch {
         return undefined
     }

@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { $ref, getHostStatusByIdSchema, responseHostStatusSchema } from "./frigate-hosts.schema";
+import { $ref, getHostStatusByIdSchema, getHostWithIncludeSchema, responseHostStatusSchema } from "./frigate-hosts.schema";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { validateRole } from "../hooks/roles.prehandler";
 import FrigateHostController from "./frigate-hosts.controller";
@@ -18,23 +18,15 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
     //     await validateRole(request, reply, allowedRoles);
     // })
 
-    server.post('/', {
-        schema:{
-            body: $ref('createHostSchema'),
-            response: {
-                201: $ref("responseHostSchema")
-            }
-        }
-    }, controller.createHostHandler)
-
     server.get('/', {
         schema:{
+            querystring: getHostWithIncludeSchema,
             response: {
-                200: $ref("getHostsSchema")
+                200: $ref("responseHostsSchema")
             }
         }
     }, controller.getHostsHandler)
-
+    
     server.get('/:id', {
         schema:{
             params: getHostStatusByIdSchema,
@@ -53,17 +45,18 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
         }
     }, controller.getHostStatusHandler)
 
-    server.delete('/:id', {
-        schema:{
-            params: getHostStatusByIdSchema,
-            response: {
-                200: $ref("responseHostSchema")
-            }
-        }
-    }, controller.deleteHostByIdHandler)
-    
     server.put('/', {
         schema:{
+            body: $ref('updateHostsSchema'),
+            response: {
+                201: $ref("responseHostsSchema")
+            }
+        }
+    }, controller.putHostsHandler)
+
+    server.put('/:id', {
+        schema:{
+            params: getHostStatusByIdSchema,
             body: $ref('updateHostSchema'),
             response: {
                 201: $ref("responseHostSchema")
@@ -71,13 +64,22 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
         }
     }, controller.putHostHandler)
     
-    server.delete('/', {
+    server.delete('/:id', {
         schema:{
-            body: $ref('deleteHostSchema'),
+            params: getHostStatusByIdSchema,
             response: {
                 200: $ref("responseHostSchema")
             }
         }
     }, controller.deleteHostHandler)
+
+    server.delete('/', {
+        schema:{
+            body: $ref('deleteHostsSchema'),
+            // response: {
+            //     200: $ref("responseHostsSchema")
+            // }
+        }
+    }, controller.deleteHostsHandler)
 
 }

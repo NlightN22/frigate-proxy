@@ -10,7 +10,7 @@ import { MissingRolesSchema, ResponseRoleSchema, ResponseRolesSchema, RoleCoreSc
 class RolesService {
     prismaClient = prisma.role
     cameraService = new CameraService()
-    oidpService = new OIDPService()
+    oidpService = OIDPService.getInstance()
 
     constructor() {
         this.updateRoles(60000)

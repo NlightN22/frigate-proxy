@@ -22,11 +22,6 @@ export const putConfigsController = withErrorHandler(async (req: FastifyRequest<
     return rep.send(await configService.saveConfigs(parsed))
 })
 
-// TODO delete
-// export const getSettingsController = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
-//     return rep.send(await configService.getSettings())
-// })
-
 export const getConfigsController = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
     return rep.send(await configService.getAllConfig())
 })

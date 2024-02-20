@@ -1,7 +1,7 @@
 import axios from "axios";
 import prisma from "../../utils/prisma";
 import { ErrorApp } from "../hooks/error.handler";
-import { CameraStats, CreateHostSchema, ResponseHostSchema, ResponseHostStatisSchema, UpdateHostSchema, } from "./frigate-hosts.schema";
+import { CameraStats, CreateHostsSchema, DeleteHostsSchema, ResponseHostSchema, ResponseHostStatisSchema, UpdateHostSchema, UpdateHostsSchema, createHostSchema, } from "./frigate-hosts.schema";
 import { FrigateAPIUrls } from "./frigate-api.urls";
 import { logger } from "../../utils/logger";
 import { objForEach } from "../../utils/parse.object";
@@ -31,22 +31,53 @@ class FrigateHostsService {
         return response.data
     }
 
-    async createFrigateHost(input: CreateHostSchema) {
-        return await this.prismaClient.create({
+    async createFrigateHosts(input: CreateHostsSchema) {
+        return await this.prismaClient.createMany({
             data: input
         })
     }
-    async updateFrigateHost(input: UpdateHostSchema) {
+    async updateFrigateHost(id: string, input: UpdateHostSchema) {
         return await this.prismaClient.update({
             where: {
-                id: input.id
+                id: id
             },
-            data: this.mapUpdateToCreateHosts(input)
+            data: input
         })
     }
+    async updateFrigateHosts(input: UpdateHostsSchema) {
+        const hostsIds = input.map(host => host.id)
+        // const updateData = input.map ( host => {
+        //     const {id, ...rest} = host
+        //     return rest
+        // })
+        return await this.prismaClient.updateMany({
+            where: {
+                id: { in: hostsIds }
+            },
+            data: input
+        })
+    }
+
+
+    async upsertFrigateHost(input: UpdateHostSchema) {
+        const parsedHost = createHostSchema.parse(input)
+        return await this.prismaClient.upsert({
+            where: { id: input.id },
+            update: parsedHost,
+            create: parsedHost
+        })
+    }
+
+    async upsertFrigateHosts(input: UpdateHostsSchema) {
+        return await Promise.all(input.map(host => this.upsertFrigateHost(host)))
+    }
+
     async getAllFrigateHosts() {
-        const frigateHosts = await this.prismaClient.findMany()
-        return frigateHosts
+        return await this.prismaClient.findMany()
+    }
+
+    async getAllFrigateHostsWithCameras() {
+        return await this.prismaClient.findMany({include: {cameras: true}})
     }
     async getFrigateHostByHost(host: string) {
         return await this.prismaClient.findUniqueOrThrow({
@@ -81,19 +112,18 @@ class FrigateHostsService {
         return this.prismaClient.delete({
             where: {
                 id: id,
-                cameras: {
-                }
+                cameras: {}
             },
             include: {
                 cameras: true
             }
         });
     }
-
-    async deleteFrigateHostByHost(host: string): Promise<ResponseHostSchema> {
-        return this.prismaClient.delete({
+    async deleteFrigateHostsById(input: string[]) {
+        return this.prismaClient.deleteMany({
             where: {
-                host: host
+                id: {in: input},
+                cameras: {}
             },
         });
     }
@@ -108,18 +138,18 @@ class FrigateHostsService {
         const hostURL = new URL(host.host)
 
         const checkURL = hostURL.toString() + FrigateAPIUrls.version
-        logger.debug(`Check host ${host.name} status at ${hostURL}`)
-        if (!hostURL || !(hostURL instanceof URL)) throw new ErrorApp('validate', `Can not convert host ${host.name} to URL`)
+        logger.debug(`FrigateHostsService Check host ${host.name} status at ${hostURL}`)
+        if (!hostURL || !(hostURL instanceof URL)) throw new ErrorApp('validate', `FrigateHostsService Can not convert host ${host.name} to URL`)
 
         try {
             const response = await this.fetcher(checkURL)
-            logger.info(`Get response status from host: ${host.name}`)
+            logger.info(`FrigateHostsService Get response status from host: ${host.name}`)
             if (response) return {
                 ...host,
                 status: true
             }
         } catch {
-            logger.info(`Failed to get response from host: ${host.name}`)
+            logger.info(`FrigateHostsService Failed to get response from host: ${host.name}`)
         }
         return {
             ...host,
@@ -134,7 +164,7 @@ class FrigateHostsService {
             FrigateHostsService._updateInProgress = true
             const startTime = Date.now()
             try {
-                logger.debug(`Start update host cameras...`)
+                logger.debug(`FrigateHostsService Start update host cameras...`)
                 // get all hosts
                 const hosts = await this.getAllFrigateHosts()
                 if (hosts.length > 0) {
@@ -142,7 +172,7 @@ class FrigateHostsService {
                         // get cameras from host
                         const config = await this.fetchConfig(host)
                         if (config) {
-                            logger.debug(`Fetched cameras from host ${host.name}`)
+                            logger.debug(`FrigateHostsService Fetched cameras from host ${host.name}`)
                             const inputCameras = this.parseCamerasNames(config.cameras)
                             if (inputCameras && inputCameras.length > 0) {
                                 const hostCameras = (await this.getFrigateHostById(host.id)).cameras
@@ -152,15 +182,16 @@ class FrigateHostsService {
                                 )
                                 const createdCameras = await this.createHostCameras(host.id, notExistInDb)
                                 if (createdCameras) {
-                                    logger.debug(`Created cameras: ${JSON.stringify(createdCameras.cameras.flatMap(cam => cam.name))}`)
+                                    logger.debug(`FrigateHostsService Created cameras: ${JSON.stringify(createdCameras.cameras.flatMap(cam => cam.name))}`)
                                 }
                                 // delete from DB not existing cameras in input
                                 const notExistInInput = hostCameras.filter(
                                     cameraHost => !inputCameras.some(inputCamera => inputCamera === cameraHost.name)
                                 )
-                                const deleteCameras = await this.deleteHostCameras(host.id, notExistInInput.flatMap(cam => cam.name))
+                                logger.silly(`FrigateHostsService updateCamerasFromHost notExistInInput: ${JSON.stringify(notExistInInput)}`)
+                                const deleteCameras = await this.deleteHostCameras(host.id, notExistInInput.flatMap(cam => cam.id))
                                 if (deleteCameras) {
-                                    logger.debug(`Deleted cameras: ${JSON.stringify(deleteCameras.cameras.flatMap(cam => cam.name))}`)
+                                    logger.debug(`FrigateHostsService Deleted cameras: ${JSON.stringify(deleteCameras.cameras.flatMap(cam => cam.name))}`)
                                 }
                             }
                         }
@@ -169,7 +200,7 @@ class FrigateHostsService {
             } catch (e) {
                 logger.error(e.message)
             } finally {
-                logger.debug(`End update hosts cameras at ${(Date.now() - startTime) / 1000} sec`)
+                logger.debug(`FrigateHostsService End update hosts cameras at ${(Date.now() - startTime) / 1000} sec`)
                 FrigateHostsService._updateInProgress = false
             }
             await sleep(updateTimer)
@@ -186,7 +217,7 @@ class FrigateHostsService {
                 FrigateHostsService._updateCamerasProgress = true
                 const startTime = Date.now()
                 try {
-                    logger.debug(`Start cameras states...`)
+                    logger.debug(`FrigateHostsService Start cameras states...`)
                     const hosts = await this.getAllFrigateHosts()
                     if (hosts.length > 0) {
                         for (const host of hosts) {
@@ -204,8 +235,8 @@ class FrigateHostsService {
                                     })
                                     // logger.debug(`hostCameras after: ${JSON.stringify(hostCameras.slice(0,2).map(cam=>({name: cam.name, state: cam.state})))}`)
                                     await this.updateHostCamerasState(host.id, hostCameras)
-                                    logger.silly(`Updated from ${host.name} cameras state: ${JSON.stringify(hostCameras.flatMap(cam => cam.name))}`)
-                                    logger.debug(`Updated from ${host.name} ${hostCameras.length} cameras states`)
+                                    logger.silly(`FrigateHostsService Updated from ${host.name} cameras state: ${JSON.stringify(hostCameras.flatMap(cam => cam.name))}`)
+                                    logger.debug(`FrigateHostsService Updated from ${host.name} ${hostCameras.length} cameras states`)
                                     updateTimer = 60000
                                 }
                             }
@@ -215,7 +246,7 @@ class FrigateHostsService {
                     logger.error(e.message)
                     updateTimer = 10000
                 } finally {
-                    logger.debug(`End update cameras state at ${(Date.now() - startTime) / 1000} sec`)
+                    logger.debug(`FrigateHostsService End update cameras state at ${(Date.now() - startTime) / 1000} sec`)
                     FrigateHostsService._updateCamerasProgress = false
                 }
             } else updateTimer = 10000
@@ -226,7 +257,7 @@ class FrigateHostsService {
     private async updateHostCamerasState(hostId: string, cameras: Camera[]) {
         if (cameras.length < 1) return
         return await Promise.all(cameras.map(async camera => {
-            logger.silly(`update host ${hostId} camera ${JSON.stringify(camera)}`)
+            logger.silly(`FrigateHostsService update host ${hostId} camera ${JSON.stringify(camera)}`)
             return this.prismaClient.update({
                 where: { id: hostId },
                 data: {
@@ -290,23 +321,25 @@ class FrigateHostsService {
 
     private async fetchConfig(host: FrigateHost) {
         try {
-            logger.debug(`Fetch config from ${host.name}`)
+            if (!host.enabled) return undefined
+            logger.debug(`FrigateHostsService Fetch config from ${host.name}`)
             const hostURL = new URL(host.host)
             const configURL = hostURL.toString() + FrigateAPIUrls.config
             return await this.fetcher<FrigateConfig>(configURL)
         } catch (e) {
-            logger.error(`Error fetch config from ${host.name}: ${e.message}`)
+            logger.error(`FrigateHostsService Error fetch config from ${host.name}: ${e.message}`)
             return undefined
         }
     }
     private async fetchStats(host: FrigateHost) {
         try {
-            logger.debug(`Fetch stats from ${host.name}`)
+            if (!host.enabled) return undefined
+            logger.debug(`FrigateHostsService Fetch stats from ${host.name}`)
             const hostURL = new URL(host.host)
             const configURL = hostURL.toString() + FrigateAPIUrls.stats
             return await this.fetcher<any>(configURL)
         } catch (e) {
-            logger.error(`Error fetch config from ${host.name}: ${e.message}`)
+            logger.error(`FrigateHostsService Error fetch config from ${host.name}: ${e.message}`)
             return undefined
         }
     }
@@ -321,10 +354,6 @@ class FrigateHostsService {
         return camerasNames
     }
 
-    private mapUpdateToCreateHosts(original: UpdateHostSchema): CreateHostSchema {
-        const { id, cameras, ...rest } = original
-        return { ...rest, ...cameras }
-    }
 }
 
 export default FrigateHostsService

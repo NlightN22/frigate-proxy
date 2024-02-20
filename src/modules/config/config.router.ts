@@ -4,9 +4,6 @@ import { $ref, paramConfigSchema } from "./config.shema";
 
 export async function configRoutes(server: FastifyInstance) {
 
-    // TODO delete
-    // server.get('/settings', {}, getSettingsController)
-
     server.get('/', {
         schema: {
             response: { 200: $ref('responseConfigsSchema')},

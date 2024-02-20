@@ -1,28 +1,42 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { CreateHostSchema, DeleteHostSchema, UpdateHostSchema, createHostSchema, deleteHostSchema, responseHostSchema, updateHostSchema } from "./frigate-hosts.schema";
+import * as schemas from "./frigate-hosts.schema";
 import { withErrorHandler } from "../hooks/error.handler";
 import FrigateHostsService from "./frigate-hosts.service";
+import { z } from "zod";
 
 class FrigateHostController {
     frigateHostsService = new FrigateHostsService()
 
     createHostHandler = withErrorHandler(async (req: FastifyRequest<{
-        Body: CreateHostSchema
+        Body: schemas.CreateHostsSchema
     }>, rep: FastifyReply) => {
-        const parsed = createHostSchema.parse(req.body);
-        const frigateHost = await this.frigateHostsService.createFrigateHost(parsed);
+        const parsed = schemas.createHostsSchema.parse(req.body);
+        const frigateHost = await this.frigateHostsService.createFrigateHosts(parsed);
         rep.code(201).send(frigateHost);
     });
 
     putHostHandler = withErrorHandler(async (req: FastifyRequest<{
-        Body: UpdateHostSchema
+        Params: { id: string }
+        Body: schemas.UpdateHostSchema
     }>, rep: FastifyReply) => {
-        const data = updateHostSchema.parse(req.body)
-        const frigateHost = await this.frigateHostsService.updateFrigateHost(data)
+        const id = z.string().parse(req.params)
+        const data = schemas.updateHostSchema.parse(req.body)
+        const frigateHost = await this.frigateHostsService.upsertFrigateHost(data)
         rep.code(201).send(frigateHost)
     })
+    putHostsHandler = withErrorHandler(async (req: FastifyRequest<{
+        Body: schemas.UpdateHostsSchema
+    }>, rep: FastifyReply) => {
+        const data = schemas.updateHostsSchema.parse(req.body)
+        const frigateHosts = await this.frigateHostsService.upsertFrigateHosts(data)
+        rep.code(201).send(frigateHosts)
+    })
 
-    getHostsHandler = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
+    getHostsHandler = withErrorHandler(async (req: FastifyRequest<{
+        Querystring: { include: string }
+    }>, rep: FastifyReply) => {
+        const { include }= req.query
+        if (include === 'cameras') return rep.send(await this.frigateHostsService.getAllFrigateHostsWithCameras())
         const servers = await this.frigateHostsService.getAllFrigateHosts()
         rep.send(servers)
     })
@@ -43,20 +57,18 @@ class FrigateHostController {
         rep.send(status)
     })
 
-    deleteHostByIdHandler = withErrorHandler(async (req: FastifyRequest<{
-        Params: { id: string }
+    deleteHostHandler = withErrorHandler(async (req: FastifyRequest<{
+        Params: schemas.DeleteHostSchema
     }>, rep: FastifyReply) => {
         const { id } = req.params
-        const frigateHost = await this.frigateHostsService.deleteFrigateHostById(id)
-        rep.send(frigateHost)
+        rep.send(await this.frigateHostsService.deleteFrigateHostById(id))
     })
-
-    deleteHostHandler = withErrorHandler(async (req: FastifyRequest<{
-        Body: DeleteHostSchema
+    deleteHostsHandler = withErrorHandler(async (req: FastifyRequest<{
+        Body: schemas.DeleteHostsSchema
     }>, rep: FastifyReply) => {
-        deleteHostSchema.parse(req.body)
-        if (req.body.host) rep.send(await this.frigateHostsService.deleteFrigateHostByHost(req.body.host))
-        if (req.body.id) rep.send(await this.frigateHostsService.deleteFrigateHostById(req.body.id))
+        const parsed = schemas.deleteHostsSchema.parse(req.body)
+        const mapped = parsed.map(host => host.id)
+        rep.send(await this.frigateHostsService.deleteFrigateHostsById(mapped))
     })
 }
 

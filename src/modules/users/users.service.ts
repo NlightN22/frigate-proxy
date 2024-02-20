@@ -2,7 +2,7 @@ import { logger } from "../../utils/logger"
 import OIDPService from "../oidp/oidp.service"
 
 export class UserService {
-    oidpService = new OIDPService()
+    oidpService = OIDPService.getInstance()
 
     constructor () {
         logger.debug(`UserService initialized`)

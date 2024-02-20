@@ -16,11 +16,6 @@ export interface Setting {
 
 export type MapSettings = [string, Setting][]
 
-// TODO delete
-// type ConfigObject<T> = {
-//     [K in keyof T]: Setting;
-// };
-
 class ConfigService {
     prismaClient = prisma.appSettings
 
@@ -31,7 +26,12 @@ class ConfigService {
     async saveConfig(key: string, value: string) {
         const allMapSettings: Map<string, Setting> = this.getMapSettings()
         const setting = allMapSettings.get(key)
-        if (!setting) throw new ErrorApp('validate', `Settings with ${key}, does not exist`)
+        if (!setting) throw new ErrorApp('validate', `ConfigService. Settings with ${key}, does not exist`)
+        // check equals at prisma
+        const settingDB = await this.prismaClient.findUnique({
+            where: { key: key}
+        })
+        if (settingDB && settingDB.value === value) return settingDB
         const finalValue = setting.encrypted ? await this.encrypt(value) : value
         return await this.prismaClient.upsert({
             where: { key: key },
@@ -62,12 +62,13 @@ class ConfigService {
     async getEncryptedConfig(key: string) {
         let config = await this.prismaClient.findUniqueOrThrow({ where: { key: key } })
         const { value, ...rest } = config
-        if (!value) throw new ErrorApp('validate', `Key ${key} value does not exist`)
+        if (!value) throw new ErrorApp('validate', `ConfigService. Key ${key} value does not exist`)
         if (config.encrypted) {
-            config = { value: await this.decrypt(value), ...rest }
-            if (!config.value) throw new ErrorApp('validate', `Key ${key} error at value decryption`)
+            const decryptedValue = await this.decrypt(value)
+            config = { value: decryptedValue, ...rest }
+            if (!config.value) throw new ErrorApp('validate', `ConfigService. Key ${key} error at value decryption`)
         }
-        logger.debug(`Get config key ${key}`)
+        logger.debug(`ConfigService. Get config key ${config.key}`)
         return config
     }
 
@@ -90,15 +91,6 @@ class ConfigService {
         return new Map<string, Setting>(allSettings)
     }
 
-    // TODO delete
-    // async getSettings() {
-    //     const settings = [
-    //         ...this.mapSettings(oIDPSettings),
-    //         ...this.mapSettings(AppSetting)
-    //     ]
-    //     return settings
-    // }
-
     private async decrypt(encryptedText: string) {
         const [ivHex, encryptedDataHex] = encryptedText.split(':');
         const iv = Buffer.from(ivHex, 'hex');
@@ -116,17 +108,6 @@ class ConfigService {
         const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
         return iv.toString('hex') + ':' + encrypted.toString('hex');
     }
-
-    // TODO delete
-    // private mapSettings<T>(obj: ConfigObject<T>): Setting[] {
-    //     return Object.keys(obj).map((key) => {
-    //         const item = obj[key];
-    //         return {
-    //             name: item.name,
-    //             key: item.key,
-    //         };
-    //     });
-    // }
 
 }
 

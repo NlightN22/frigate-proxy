@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createCameraSchema, responseCameraCoreSchema, responseCameraSchema } from "../camera/camera.schema";
+import { responseCameraCoreSchema } from "../camera/camera.schema";
 import { buildJsonSchemas } from "fastify-zod";
 
 export const hostCoreSchema = {
@@ -25,6 +25,16 @@ export const getHostStatusByIdSchema = {
     }
 }
 
+export const getHostWithIncludeSchema = {
+    type: 'object',
+    properties: {
+        include: {
+            type: 'string',
+            description: 'Include another related object to response, e.g `cameras`',
+        },
+    }
+}
+
 export const responseHostStatusSchema = z.object({
     id: z.string(),
     ...hostCoreSchema,
@@ -34,14 +44,16 @@ export const responseHostStatusSchema = z.object({
 
 export const createHostSchema = z.object({
     ...hostCoreSchema,
-    create: z.array(createCameraSchema).optional()
 })
+
+export const createHostsSchema = createHostSchema.array()
 
 export const updateHostSchema = z.object({
     id: z.string(),
     ...hostCoreSchema,
-    cameras: z.array(createCameraSchema).optional()
 })
+
+export const updateHostsSchema = updateHostSchema.array()
 
 export const responseHostCoreSchema = {
     id: z.string(),
@@ -57,14 +69,11 @@ export const responseHostSchema = z.object({
 })
 
 export const deleteHostSchema = z.object({
-    id: z.string().optional(),
-    host: hostCoreSchema.host.optional(),
-}).refine((data) => {
-    return (data.id && !data.host) || (!data.id && data.host);
-},
-    { params: { i18n: "HostOrIdExist" } })
+    id: z.string()
+})
+export const deleteHostsSchema = deleteHostSchema.array()
 
-const getHostsSchema = z.array(responseHostSchema)
+const responseHostsSchema = responseHostSchema.array()
 export const getHostSchema = deleteHostSchema
 
 export const cameraStats = z.object({
@@ -72,20 +81,24 @@ export const cameraStats = z.object({
     state: z.boolean(),
 })
 
-export type CreateHostSchema = z.infer<typeof createHostSchema>
+export type CreateHostsSchema = z.infer<typeof createHostsSchema>
 export type ResponseHostSchema = z.infer<typeof responseHostSchema>
 export type ResponseHostStatisSchema = z.infer<typeof responseHostStatusSchema>
 export type UpdateHostSchema = z.infer<typeof updateHostSchema>
+export type UpdateHostsSchema = z.infer<typeof updateHostsSchema>
 export type DeleteHostSchema = z.infer<typeof deleteHostSchema>
+export type DeleteHostsSchema = z.infer<typeof deleteHostsSchema>
 export type CameraStats = z.infer<typeof cameraStats>
 
 export const { schemas: frigateHostSchemas, $ref } = buildJsonSchemas({
-    createHostSchema,
+    createHostsSchema,
     updateHostSchema,
-    getHostsSchema,
+    updateHostsSchema,
     getHostSchema,
     responseHostSchema,
+    responseHostsSchema,
     responseHostStatusSchema,
     deleteHostSchema,
+    deleteHostsSchema,
 },
     { $id: 'hostSchemas' })

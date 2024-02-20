@@ -2,14 +2,16 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { logger } from "../../utils/logger";
 import axios, { AxiosRequestConfig } from "axios";
 import { ProxyQueryParams, proxyQueryParams } from "./proxy.schema";
+import { stringify } from "querystring";
 
 export async function proxyService(request: FastifyRequest<{
-    Querystring: ProxyQueryParams
+    Querystring: any
 }>, reply: FastifyReply) {
     const { method, body, query, params } = request;
 
     const requestBody = body as any
-    const { hostName } = proxyQueryParams.parse(query)
+    const { hostName, ...rest } = query as any
+    if (!hostName) reply.code(400).send({ error: 'Need hostname at query' })
     const requestParams = params as any
 
     logger.debug(`body: ${JSON.stringify(body)}`)
@@ -17,7 +19,9 @@ export async function proxyService(request: FastifyRequest<{
     logger.debug(`params: ${JSON.stringify(params)}`)
     logger.debug(`method: ${JSON.stringify(method)}`)
 
-    const targetUrl = `http://${hostName}/${requestParams['*']}`
+    const queryString = stringify(rest)
+
+    const targetUrl = `http://${hostName}/${requestParams['*']}${queryString ? '?' + queryString : ''}`;
 
     const config: AxiosRequestConfig = {
         method: method as any,
@@ -30,10 +34,20 @@ export async function proxyService(request: FastifyRequest<{
 
     try {
         const response = await axios(config)
-        reply.code(response.status).send(response.data)
+        Object.keys(response.headers).forEach((key) => {
+            if (!['content-length', 'content-encoding', 'transfer-encoding', 'connection'].includes(key.toLowerCase())) {
+                reply.header(key, response.headers[key]);
+            }
+        });
+        
+        reply.status(response.status);
+        response.data.pipe(reply.raw);
         logger.info(`target ${hostName} response OK`)
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
+            Object.entries(error.response.headers).forEach(([key, value]) => {
+                reply.header(key, value);
+            });
             reply.code(error.response.status).send(error.response.data);
         } else {
             reply.code(502).send({ error: 'Bad Gateway' });

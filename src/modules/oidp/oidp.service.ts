@@ -33,10 +33,10 @@ interface OIDPConfig {
 }
 
 class OIDPService {
+    private static instance: OIDPService
     configService = new ConfigService()
     id: UUID
     private static _authenticate: Authenticate | null
-    private static _oidpConfig: OIDPConfig | undefined
     private static _authState: OIDPAuthState = OIDPAuthState.NotStarted
     static get authState(): OIDPAuthState {
         return this._authState
@@ -46,9 +46,16 @@ class OIDPService {
 
     private static _refreshTokenTimeout?: NodeJS.Timeout;
 
-    constructor() {
+    private constructor() {
         this.init()
         logger.debug(`OIDPService initialized`)
+    }
+
+    public static getInstance(): OIDPService {
+        if (!OIDPService.instance) {
+            OIDPService.instance = new OIDPService()
+        }
+        return OIDPService.instance
     }
 
     async fetchRoles() {
@@ -107,64 +114,63 @@ class OIDPService {
     }
 
     private async getNewToken() {
-        const refreshToken = OIDPService._authenticate?.refresh_token
         let data: Authenticate | undefined
         while (!data) {
+            const refreshToken = OIDPService._authenticate?.refresh_token
             if (refreshToken && this.verifyJWT(refreshToken)) data = await this.fetchAccessToken(refreshToken)
             else data = await this.fetchAccessToken()
+            if (!data) logger.debug('OIDPService not get access token from service')
             await sleep(30000)
         }
+        OIDPService._authenticate = data
         this.saveTokenToDb(data)
         this.setRefreshTokenTimeout()
-        logger.debug('OIDPService set access token')
         OIDPService._authState = OIDPAuthState.Completed
+        logger.debug('OIDPService set access token')
     }
 
-    private setRequestBody(refreshToken: string | undefined = undefined) {
-        if (!OIDPService._oidpConfig) return
+    private setRequestBody(refreshToken: string | undefined = undefined, requestConfig: OIDPConfig) {
         let request
         if (refreshToken) {
             request = {
-                client_id: OIDPService._oidpConfig.clientId,
+                client_id: requestConfig.clientId,
                 refresh_token: refreshToken,
                 grant_type: 'refresh_token',
-                client_secret: OIDPService._oidpConfig.clientSecret,
+                client_secret: requestConfig.clientSecret,
             }
         } else {
             request = {
-                client_id: OIDPService._oidpConfig.clientId,
-                username: OIDPService._oidpConfig.clientUsername,
-                password: OIDPService._oidpConfig.clientPassword,
+                client_id: requestConfig.clientId,
+                username: requestConfig.clientUsername,
+                password: requestConfig.clientPassword,
                 grant_type: 'password',
-                client_secret: OIDPService._oidpConfig.clientSecret,
+                client_secret: requestConfig.clientSecret,
             }
         }
         return new URLSearchParams(request).toString()
     }
 
-    private async setRequestConfig() {
+    private async getRequestConfig() {
         try {
             const config = await this.getConfig()
-            OIDPService._oidpConfig = config
-            logger.info(`OIDPService set request config`)
+            return config
         } catch (e) {
             logger.error(`OIDPService cannot set request config: ${e.message}`)
+            return undefined
         }
     }
 
     private async fetchAccessToken(refreshToken: string | undefined = undefined) {
         if (OIDPService._authState === OIDPAuthState.InProgress) return
         OIDPService._authState = OIDPAuthState.InProgress
-        if (!OIDPService._oidpConfig) {
-            await this.setRequestConfig()
-            if (!OIDPService._oidpConfig) {
-                OIDPService._authState = OIDPAuthState.NotStarted
-                return
-            }
+        const requestConfig = await this.getRequestConfig()
+        if (!requestConfig) {
+            OIDPService._authState = OIDPAuthState.NotStarted
+            return
         }
         logger.debug('OIDPService fetchAccessToken...')
-        const url = OIDPService._oidpConfig.clientURL + OIDPUrls.auth
-        const reqXHTML = this.setRequestBody(refreshToken)
+        const url = requestConfig.clientURL + OIDPUrls.auth
+        const reqXHTML = this.setRequestBody(refreshToken, requestConfig)
         if (!reqXHTML) {
             logger.error(`OIDPService cannot set request reqXHTML`)
             OIDPService._authState = OIDPAuthState.NotStarted
@@ -178,8 +184,10 @@ class OIDPService {
                 },
             });
             return this.mapToAuthenticate(data)
-        } catch (error) {
-            logger.error(error);
+        } catch (e) {
+            if (e instanceof Error) {
+                logger.error(`OIDPService: ${e.message}`);
+            }
             OIDPService._authState = OIDPAuthState.NotStarted
             return undefined
         }
@@ -192,6 +200,7 @@ class OIDPService {
     }
 
     private async saveTokenToDb(auth: Authenticate) {
+        logger.debug('OIDPService save access token to DB')
         await this.prismaClient.upsert({
             where: { id: 1 },
             update: auth,
@@ -201,31 +210,37 @@ class OIDPService {
     }
 
     private setRefreshTokenTimeout() {
-        if (OIDPService._authenticate && OIDPService._authenticate.access_token) {
-            const expired = this.getTokenExp(OIDPService._authenticate.access_token)
-            if (!expired) throw new ErrorApp('runtime', 'OIDPService cannot get token expired time')
-            const currentTimeInSeconds = Math.floor(Date.now() / 1000)
-            const timeUntilExpirationInSeconds = expired - currentTimeInSeconds - 30
-            if (timeUntilExpirationInSeconds > 0) {
-                const expiresInMs = timeUntilExpirationInSeconds * 1000
-                logger.debug(`OIDPService set expired token time to ${timeUntilExpirationInSeconds} sec`)
-                OIDPService._refreshTokenTimeout = setTimeout(() => {
-                    logger.debug(`OIDPService access token expired. Start update token.`)
-                    this.getNewToken()
-                }, expiresInMs);
-            }
+        if (!OIDPService._authenticate || !OIDPService._authenticate.access_token) {
+            logger.error('OIDPService can not set refresh token timeout, OIDPService not authenticated')
+            return
+        }
+        const expired = this.getTokenExp(OIDPService._authenticate.access_token)
+        if (!expired) throw new ErrorApp('runtime', 'OIDPService cannot get token expired time')
+        const currentTimeInSeconds = Math.floor(Date.now() / 1000)
+        const timeUntilExpirationInSeconds = expired - currentTimeInSeconds - 30
+        if (timeUntilExpirationInSeconds > 0) {
+            const expiresInMs = timeUntilExpirationInSeconds * 1000
+            logger.debug(`OIDPService set expired token time to ${timeUntilExpirationInSeconds} sec`)
+            OIDPService._refreshTokenTimeout = setTimeout(() => {
+                logger.debug(`OIDPService access token expired. Start update token.`)
+                this.getNewToken()
+            }, expiresInMs);
         }
     }
 
     private async fetcher(authURL: string) {
-        const getNewTokenConditions = OIDPService.authState === OIDPAuthState.NotStarted ||
-            (OIDPService.authState === OIDPAuthState.Completed && !OIDPService._authenticate) ||
-            !OIDPService._oidpConfig
-
-        if (getNewTokenConditions) await this.getNewToken()
-        if (!OIDPService._authenticate) throw Error(`Authentication not completed, auth state ${OIDPService.authState}`)
-        if (!OIDPService._oidpConfig) throw Error(`OIDPService config not set`)
-        const oidpURL = new URL(OIDPService._oidpConfig.clientURL)
+        if (!OIDPService._authenticate || !OIDPService._authenticate.access_token) throw Error(`OIDPService Authentication not completed, auth state ${OIDPService.authState}`)
+        const accessToken = OIDPService._authenticate.access_token
+        if (accessToken) {
+            if (!this.verifyJWT(accessToken)) {
+                logger.debug('OIDPService.fetcher acess token not valid')
+                await this.getNewToken()
+            }
+        }
+        if (!this.verifyJWT(accessToken)) throw new ErrorApp('internal', 'OIDPService acess token not valid')
+        const requestConfig = await this.getRequestConfig()
+        if (!requestConfig) throw Error(`OIDPService config not set`)
+        const oidpURL = new URL(requestConfig.clientURL)
         const url = oidpURL.protocol + '//' + oidpURL.host + authURL
         try {
             const response = await axios.get(url, {
@@ -234,7 +249,9 @@ class OIDPService {
             })
             return response.data
         } catch (e) {
-            logger.error(e)
+            if (e instanceof Error) {
+                logger.error(`OIDPService: ${e.message}`);
+            }
             return null
         }
     }

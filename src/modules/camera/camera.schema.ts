@@ -8,6 +8,7 @@ export const responseCameraCoreSchema = {
     name: z.string(),
     url: z.string().url().optional(),
     state: z.boolean().nullable(),
+    config: z.record(z.any()).nullable().optional(),
 }
 
 const hostCore = {

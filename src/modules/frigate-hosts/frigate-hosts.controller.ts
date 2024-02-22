@@ -5,7 +5,7 @@ import FrigateHostsService from "./frigate-hosts.service";
 import { z } from "zod";
 
 class FrigateHostController {
-    frigateHostsService = new FrigateHostsService()
+    frigateHostsService = FrigateHostsService.getInstance()
 
     createHostHandler = withErrorHandler(async (req: FastifyRequest<{
         Body: schemas.CreateHostsSchema

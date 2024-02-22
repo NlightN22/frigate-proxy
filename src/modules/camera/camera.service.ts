@@ -3,13 +3,15 @@ import prisma from "../../utils/prisma";
 import { ErrorApp } from "../hooks/error.handler";
 import { CreateCameraSchema, UpdateCameraSchema } from "./camera.schema";
 import { logger } from "../../utils/logger";
+import { init } from "i18next";
+import { sleep } from "../../utils/sleep";
 
 
 class CameraService {
     private prismaClient = prisma.camera
 
-    constructor () {
-        logger.debug(`FrigateHostsService initialized`)
+    constructor() {
+        logger.debug(`CameraService initialized`)
     }
 
     async createCamera(input: CreateCameraSchema) {
@@ -54,6 +56,18 @@ class CameraService {
         })
     }
 
+    async getCameraByName(name: string) {
+        return await this.prismaClient.findFirst({
+            where: {
+                name: name
+            },
+            include: {
+                frigateHost: true,
+                roles: true
+            }
+        })
+    }
+
     async editCamera(input: UpdateCameraSchema) {
         const { id, ...rest } = input
         return await this.prismaClient.update({
@@ -74,7 +88,7 @@ class CameraService {
         if (camera.frigateHostId) {
             // host = await frigateHostsService.getFrigateHostOrNull(camera.frigateHostId)
         }
-        if (host) throw new ErrorApp('validate', 'Cannot delete frigate camera. Host is exist')
+        if (host) throw new ErrorApp('validate', 'CameraService Cannot delete frigate camera. Host is exist')
         return await this.prismaClient.delete({
             where: {
                 id: id
@@ -108,7 +122,7 @@ class CameraService {
 
     async deleteRoles(camerasId: string[], rolesId: string[]) {
         const cameras = await this.getCamerasByIds(camerasId)
-        await Promise.all(cameras.map(async (camera) => {
+        return await Promise.all(cameras.map(async (camera) => {
             const updatedRolesIDs = camera.rolesIDs.filter(roleId => !rolesId.includes(roleId));
             return await this.prismaClient.update({
                 where: { id: camera.id },
@@ -119,9 +133,9 @@ class CameraService {
 
     async addRoles(camerasId: string[], rolesId: string[]) {
         const cameras = await this.getCamerasByIds(camerasId)
-        await Promise.all(cameras.map(camera => {
+        return await Promise.all(cameras.map(camera => {
             const updatedRolesIDs = [...new Set([...camera.rolesIDs, ...rolesId])];
-            logger.debug(`Camera add roles: ${updatedRolesIDs}`)
+            logger.debug(`CameraService Camera add roles: ${updatedRolesIDs}`)
             return this.prismaClient.update({
                 where: {
                     id: camera.id

@@ -3,6 +3,7 @@ import { logger } from "../../utils/logger";
 import { stringify } from "querystring";
 import http from 'http'
 import https from 'https'
+import { hostURL } from "../../consts";
 
 export async function httpProxyService(request: FastifyRequest<{
   Querystring: any
@@ -24,11 +25,19 @@ export async function httpProxyService(request: FastifyRequest<{
 
   const path = targetUrl.pathname + targetUrl.search
   const method = request.raw.method
-  const headers = { ...request.headers, host: targetUrl.host };
+  const headers = {
+    ...request.headers,
+    host: targetUrl.host,
+    
+  };
+  headers['sec-fetch-site'] = 'none'
+  headers['sec-fetch-mode'] = 'navigate'
+  delete headers['origin']
   delete headers['content-length']
   delete headers['authorization']
   const port = targetUrl.port
   const hostname = targetUrl.hostname
+  logger.debug(JSON.stringify(headers))
 
   logger.silly(`target path: ${JSON.stringify(path)}`)
   logger.silly(`target method: ${JSON.stringify(method)}`)
@@ -50,8 +59,12 @@ export async function httpProxyService(request: FastifyRequest<{
     const proxyRequest = proxy.request(options, (res) => {
       logger.silly(`target response status: ${res.statusCode}`);
       logger.silly(`target response headers: ${JSON.stringify(res.headers)}`);
-      reply.raw.writeHead(res.statusCode || 500, res.headers);
+      // Add CORS
+      const headersWithCors = { ...res.headers, 'Access-Control-Allow-Origin': '*' }
+      // Change response code
+      reply.raw.writeHead(res.statusCode || 500, headersWithCors);
       res.pipe(reply.raw);
+      logger.debug(`Proxy request to ${hostName} at ${path} is finished with code ${res.statusCode}`)
       resolve()
     });
 

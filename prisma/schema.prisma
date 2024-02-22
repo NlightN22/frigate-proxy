@@ -24,6 +24,7 @@ model Camera {
   roles         Role[]       @relation(fields: [rolesIDs], references: [id])
   rolesIDs      String[]
   state         Boolean?
+  config        Json?
 }
 
 model FrigateHost {

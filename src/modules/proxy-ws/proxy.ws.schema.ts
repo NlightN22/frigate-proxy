@@ -1,23 +1,21 @@
 import { buildJsonSchemas } from "fastify-zod"
 import { z } from "zod"
 
-export const proxyWsQueryParams = z.object({
-    hostName: z.string({
-        required_error: 'Hostname is required',
-        invalid_type_error: 'Hostname must be a string'
-    })
+export const proxyWsParams = z.object({
+    hostName: z.string()
 })
 
-export const proxyWsQueryJsonSchema = {
+export const proxyWsParamsSchema = {
     type: 'object',
     properties: {
         hostName: {
             type: 'string',
-            description: 'Target hostname URL',
+            description: 'Target hostname URL, e.g. localhost:4000',
         },
-    },
-    required: ['hostName']
+    }
 }
 
-export const { schemas: proxyWsSchemas, $ref } = buildJsonSchemas({proxyWQueryParams: proxyWsQueryParams},
+export const { schemas: proxyWsSchemas, $ref } = buildJsonSchemas({proxyWsParams: proxyWsParams},
     {$id: 'proxyWsSchemas'})
+
+export type ProxyWsParamsSchema = z.infer<typeof proxyWsParams>

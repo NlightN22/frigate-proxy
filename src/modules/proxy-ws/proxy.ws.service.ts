@@ -1,16 +1,18 @@
-import { FastifyRequest } from "fastify";
+import { FastifyReply, FastifyRequest } from "fastify";
 import { SocketStream } from '@fastify/websocket';
 import { logger } from "../../utils/logger";
 import WebSocket from 'ws';
-import { proxyWsQueryParams } from "./proxy.ws.schema";
+import { ProxyWsParamsSchema, proxyWsParams } from "./proxy.ws.schema";
 
 
 type Connections = {
-    source : WebSocket | undefined,
-    target : WebSocket | undefined
+    source: WebSocket | undefined,
+    target: WebSocket | undefined
 }
 
-export async function proxyWsService(connection: SocketStream, req: FastifyRequest) {
+export async function proxyWsService(connection: SocketStream, req: FastifyRequest<{
+    Params: ProxyWsParamsSchema
+}>) {
     const source = connection.socket
     const connections: Connections = {
         source: source,
@@ -19,8 +21,14 @@ export async function proxyWsService(connection: SocketStream, req: FastifyReque
     try {
         const { body, query, params, url } = req;
 
-        const requestBody = body as any
-        const { hostName } = proxyWsQueryParams.parse(query)
+        let hostName: string | undefined
+        try {
+          const parsed = proxyWsParams.parse(params)
+          hostName = parsed.hostName
+        } catch (e) {
+          if (e instanceof Error) close(connections, 1011, e.message)
+        }
+        if (!hostName) close(connections, 1011, 'Need hostname at params')
         const requestParams = params as any
 
         logger.debug(`body: ${JSON.stringify(body)}`)

@@ -194,7 +194,12 @@ class FrigateHostUpdates {
         return Promise.all(inputCameras.map(camera => {
             const dbCamera = host.cameras.find(item => item.name === camera.name)
             if (dbCamera) {
-                return this.updateHostCameraConfig(host, dbCamera, camera)
+                try {
+                    return this.updateHostCameraConfig(host, dbCamera, camera)
+                } catch (e) {
+                    logger.error(`FrigateHostUpdates updateHostCamerasWConfig ${e.message}`)
+                    return undefined
+                }
             }
             return undefined
         }))

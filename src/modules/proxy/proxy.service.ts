@@ -1,12 +1,10 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { logger } from "../../utils/logger";
 import axios, { AxiosRequestConfig } from "axios";
-import { ProxyQueryParams, proxyQueryParams } from "./proxy.schema";
+import { ProxyParamsSchema, proxyParams } from "./proxy.schema";
 import { stringify } from "querystring";
 
-export async function proxyService(request: FastifyRequest<{
-    Querystring: any
-}>, reply: FastifyReply) {
+export async function proxyService(request: FastifyRequest, reply: FastifyReply) {
     const { method, body, query, params } = request;
 
     const requestBody = body as any

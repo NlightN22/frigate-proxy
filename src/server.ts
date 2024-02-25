@@ -8,7 +8,6 @@ import { proxyWsSchemas } from "./modules/proxy-ws/proxy.ws.schema"
 import { rolesSchemas } from "./modules/roles/roles.schema"
 import { selectLanguageHook } from "./modules/hooks/select.lang.prehandler"
 import { configSchemas } from "./modules/config/config.shema"
-import { User } from "./modules/users/users.schema"
 import { cameraRoutes } from "./modules/camera/camera.route"
 import { frigateHostsRoutes } from "./modules/frigate-hosts/frigate-hosts.route"
 import { rolesRoutes } from "./modules/roles/roles.route"
@@ -18,6 +17,13 @@ import { proxyRoute } from "./modules/proxy/proxy.route"
 import websocket from '@fastify/websocket'
 import { proxyWsRoute } from "./modules/proxy-ws/proxy.ws.route"
 import cors from '@fastify/cors'
+
+
+export interface User {
+    id: string,
+    name: string,
+    roles: string[],
+  }
 
 declare module 'fastify' {
     export interface FastifyRequest {

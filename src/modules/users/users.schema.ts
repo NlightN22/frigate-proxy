@@ -1,16 +1,11 @@
-export const usersByRoleQueryJsonSchema = {
+export const getUsersByRoleSchema = {
   type: 'object',
   properties: {
-    roleName: {
+    role: {
       type: 'string',
       description: 'Auth server role name',
     },
   },
-  required: ['roleName']
 }
 
-export interface User {
-  id: string,
-  name: string,
-  roles: string[],
-}
+

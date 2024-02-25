@@ -50,10 +50,12 @@ class RolesService {
         })
     }
 
-    async addCameras(roleId: string, inputCamerasID: string[]) {
+    async editCameras(roleId: string, inputCamerasID: string[]) {
         if (inputCamerasID.length < 1) throw new ErrorApp('validate', 'Nothing to add')
         const { cameraIDs } = await this.prismaClient.findUniqueOrThrow({ where: { id: roleId } })
         const newIds = inputCamerasID.filter(inputId => !cameraIDs.includes(inputId))
+        const notExistIds = cameraIDs.filter(id => !inputCamerasID.some(inputId => id === inputId))
+        if (notExistIds.length > 0) await this.deleteCameras(roleId, notExistIds)
         await this.cameraService.addRoles(inputCamerasID, [roleId])
         return await this.prismaClient.update({
             where: { id: roleId },
@@ -68,7 +70,6 @@ class RolesService {
         if (inputCamerasID.length < 1) throw new ErrorApp('validate', 'Nothing to delete')
         const { cameraIDs } = await this.prismaClient.findUniqueOrThrow({ where: { id: roleId } })
         const updatedIds = cameraIDs.filter(id => !inputCamerasID.some(inputId => id === inputId))
-        logger.debug(`updatedIds: ${JSON.stringify(updatedIds)}`)
         await this.cameraService.deleteRoles(inputCamerasID, [roleId])
         return await this.prismaClient.update({
             where: { id: roleId },

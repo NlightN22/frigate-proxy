@@ -23,6 +23,24 @@ export interface AuthUser {
   access: Access
 }
 
+export interface UserByRole {
+  id: string
+  createdTimestamp: number
+  username: string
+  enabled: boolean
+  totp: boolean
+  emailVerified: boolean
+  firstName: string
+  lastName: string
+  email: string
+  federationLink: string
+  attributes: Attributes
+  disableableCredentialTypes: any[]
+  requiredActions: any[]
+  notBefore: number
+}
+
+
 interface Attributes {
   LDAP_ENTRY_DN: string[]
   LDAP_ID: string[]

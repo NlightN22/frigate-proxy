@@ -1,7 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify"
 import { withErrorHandler } from "../hooks/error.handler"
 import RolesService from "./roles.service"
-import { AddRoleCamerasSchema, DeleteRoleCamerasSchema } from "./roles.schema"
+import { AddRoleCamerasSchema, DeleteRoleCamerasSchema, addRoleCamerasSchema, deleteRoleCamerasSchema } from "./roles.schema"
+import { z } from "zod"
 
 
 class RolesController {
@@ -23,15 +24,15 @@ class RolesController {
         Body: AddRoleCamerasSchema
     }>, rep: FastifyReply) => {
         const { id } = req.params
-        const { cameraIDs } = req.body
-        rep.send(await this.rolesService.addCameras(id, cameraIDs))
+        const { cameraIDs } = addRoleCamerasSchema.parse(req.body)
+        rep.send(await this.rolesService.editCameras(id, cameraIDs))
     })
     deleteRoleCamerasHandler = withErrorHandler(async (req: FastifyRequest<{
         Params: { id: string }
         Body: DeleteRoleCamerasSchema
     }>, rep: FastifyReply) => {
         const { id } = req.params
-        const { cameraIDs } = req.body
+        const { cameraIDs } = deleteRoleCamerasSchema.parse(req.body)
         rep.send(await this.rolesService.deleteCameras(id, cameraIDs))
     })
 }

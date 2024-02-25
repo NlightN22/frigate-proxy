@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from "axios"
 import { logger } from "../../utils/logger"
 import { OIDPUrls } from "./oidp.urls"
-import { OIDPRole, AuthUser } from "./oidp.schema"
+import { OIDPRole, AuthUser, UserByRole } from "./oidp.schema"
 import { UUID, randomUUID } from "crypto"
 import prisma from "../../utils/prisma"
 import { JwtPayload, jwtDecode } from "jwt-decode"
@@ -69,7 +69,8 @@ class OIDPService {
     }
 
     async fetchUsersByRole(roleName: string) {
-        const data: AuthUser[] = await this.fetcher(OIDPUrls.usersByRole(roleName))
+        logger.debug(`OIDPService fetch uses by role: ${roleName}`)
+        const data: UserByRole[] = await this.fetcher(OIDPUrls.usersByRole(roleName))
         return data
     }
 

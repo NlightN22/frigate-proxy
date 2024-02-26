@@ -53,7 +53,7 @@ class FrigateHostController {
         Params: { id: string }
     }>, rep: FastifyReply) => {
         const { id } = req.params
-        const status = await this.frigateHostsService.getHostStatus(id)
+        const status = await this.frigateHostsService.getHostState(id)
         rep.send(status)
     })
 

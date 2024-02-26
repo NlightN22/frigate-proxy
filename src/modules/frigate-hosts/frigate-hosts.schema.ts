@@ -62,6 +62,7 @@ export const responseHostCoreSchema = {
     name: z.string(),
     host: z.string(),
     enabled: z.boolean().nullable(),
+    state: z.boolean().nullable(),
 }
 export const responseHostSchema = z.object({
     ...responseHostCoreSchema,

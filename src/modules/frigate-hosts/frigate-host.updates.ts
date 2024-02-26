@@ -17,11 +17,13 @@ class FrigateHostUpdates {
     private static _instance: FrigateHostUpdates
     private static _updateInProgress = false
     private static _updateCamerasProgress = false
+    private static _updateHostsStateProgress = false
     private _frigateHostsService: FrigateHostsService
     private prismaClient = prisma.frigateHost
 
     private constructor(frigateHostsService: FrigateHostsService) {
         this._frigateHostsService = frigateHostsService;
+        this.updateHostsState()
         this.updateCamerasFromHost()
         this.updateCamerasState()
         logger.debug(`FrigateHostUpdates initialized`)
@@ -39,6 +41,40 @@ class FrigateHostUpdates {
         })
         return response.data
     }
+
+    private async updateHostsState() {
+        const updateTimer = 20000
+        const updateConditions = !FrigateHostUpdates._updateHostsStateProgress || !dev.disableUpdates
+        while (true) {
+            if (updateConditions) {
+                const enabledHosts = await this.prismaClient.findMany({ where: { enabled: true } })
+                if (enabledHosts.length > 0) {
+                    const startTime = Date.now()
+                    const results = await Promise.all(enabledHosts.map(async host => {
+                        try {
+                            const { status } = await this._frigateHostsService.getHostState(host.id)
+                            await this.prismaClient.update({
+                                where: { id: host.id },
+                                data: { state: status }
+                            })
+                            return { success: true, hostId: host.id }
+                        } catch (e) {
+                            if (e instanceof Error)
+                                logger.error(`FrigateHostUpdates updateHostsState: ${e.message}`)
+                            return { success: false, hostId: host.id }
+                        }
+                    }))
+
+                    const successCount = results.filter(result => result.success).length
+                    const failtureCount = results.length - successCount
+                    logger.debug(`FrigateHostUpdates update states finished at ${(Date.now() - startTime) / 1000} sec. 
+                                Success: ${successCount}, Failed: ${failtureCount}`)
+                }
+            }
+            await sleep(updateTimer)
+        }
+    }
+
 
     private async updateCamerasState() {
         let updateTimer = 10000
@@ -116,7 +152,7 @@ class FrigateHostUpdates {
         })
         return camerasStates
     }
-    
+
     private async fetchStats(host: FrigateHost) {
         try {
             if (!host.enabled) return undefined

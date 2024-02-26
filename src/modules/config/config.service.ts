@@ -68,7 +68,7 @@ class ConfigService {
             config = { value: decryptedValue, ...rest }
             if (!config.value) throw new ErrorApp('validate', `ConfigService. Key ${key} error at value decryption`)
         }
-        logger.debug(`ConfigService. Get config key ${config.key}`)
+        logger.silly(`ConfigService. Get config key ${config.key}`)
         return config
     }
 

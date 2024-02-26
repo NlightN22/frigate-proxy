@@ -120,23 +120,23 @@ class FrigateHostsService {
         return new URL(frigateHost.host).host
     }
 
-    async getHostStatus(id: string): Promise<ResponseHostStatisSchema> {
+    async getHostState(id: string): Promise<ResponseHostStatisSchema> {
         const host = await this.getFrigateHostById(id)
         const hostURL = new URL(host.host)
 
         const checkURL = hostURL.toString() + FrigateAPIUrls.version
-        logger.debug(`FrigateHostsService Check host ${host.name} status at ${hostURL}`)
+        logger.silly(`FrigateHostsService Check host ${host.name} status at ${hostURL}`)
         if (!hostURL || !(hostURL instanceof URL)) throw new ErrorApp('validate', `FrigateHostsService Can not convert host ${host.name} to URL`)
 
         try {
             const response = await this.fetcher(checkURL)
-            logger.info(`FrigateHostsService Get response status from host: ${host.name}`)
+            logger.silly(`FrigateHostsService Get response status from host: ${host.name}`)
             if (response) return {
                 ...host,
                 status: true
             }
         } catch {
-            logger.info(`FrigateHostsService Failed to get response from host: ${host.name}`)
+            logger.error(`FrigateHostsService getHostState: ${host.name}`)
         }
         return {
             ...host,
@@ -152,26 +152,6 @@ class FrigateHostsService {
             include: {
                 cameras: true
             }
-        })
-    }
-
-    // TODO delete
-    private async createHostCameras(hostId: string, cameraNames: string[]) {
-        if (cameraNames.length < 1) return
-        const host = await this.prismaClient.findUniqueOrThrow({ where: { id: hostId } })
-        const camerasData = cameraNames.map(cameraName => ({
-            name: cameraName
-        }))
-        return await this.prismaClient.update({
-            where: { id: host.id },
-            data: {
-                cameras: {
-                    createMany: {
-                        data: camerasData
-                    }
-                }
-            },
-            include: { cameras: true }
         })
     }
 }

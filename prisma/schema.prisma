@@ -35,6 +35,7 @@ model FrigateHost {
   host     String   @unique
   enabled  Boolean? @default(true)
   cameras  Camera[]
+  state    Boolean?
 }
 
 model Role {

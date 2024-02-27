@@ -4,7 +4,7 @@ import { PutConfigSchema, PutConfigsSchema, putConfigSchema, putConfigsSchema } 
 import ConfigService from "./config.service";
 import { z } from "zod";
 
-const configService = new ConfigService()
+const configService = ConfigService.getInstance()
 
 export const putConfigController = withErrorHandler(async (req: FastifyRequest<{
     Params: { key: string }
@@ -24,6 +24,9 @@ export const putConfigsController = withErrorHandler(async (req: FastifyRequest<
 
 export const getConfigsController = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
     return rep.send(await configService.getAllConfig())
+})
+export const getAdminController = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
+    return rep.send(await configService.getAdminRole())
 })
 
 export const getConfigController = withErrorHandler(async (req: FastifyRequest<{

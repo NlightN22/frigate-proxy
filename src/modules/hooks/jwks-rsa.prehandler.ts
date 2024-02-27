@@ -9,7 +9,7 @@ import ConfigService from "../config/config.service";
 
 const getOidpUrl = async () => {
     try {
-        const configService = new ConfigService()
+        const configService = ConfigService.getInstance()
         const config = await configService.getEncryptedConfig(oidpSettingsKeys.realmUrl)
         return new URL(config.value)
     } catch {

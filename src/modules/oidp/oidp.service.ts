@@ -34,7 +34,7 @@ interface OIDPConfig {
 
 class OIDPService {
     private static instance: OIDPService
-    configService = new ConfigService()
+    configService = ConfigService.getInstance()
     id: UUID
     private static _authenticate: Authenticate | null
     private static _authState: OIDPAuthState = OIDPAuthState.NotStarted

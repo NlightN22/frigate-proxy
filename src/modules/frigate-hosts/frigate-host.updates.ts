@@ -57,7 +57,7 @@ class FrigateHostUpdates {
                                 where: { id: host.id },
                                 data: { state: status }
                             })
-                            return { success: true, hostId: host.id }
+                            return { success: status, hostId: host.id }
                         } catch (e) {
                             if (e instanceof Error)
                                 logger.error(`FrigateHostUpdates updateHostsState: ${e.message}`)

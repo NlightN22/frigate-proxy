@@ -62,8 +62,8 @@ export async function httpProxyService(request: FastifyRequest<{
 
   return new Promise<void>((resolve, reject) => {
     const proxyRequest = proxy.request(options, (res) => {
-      logger.silly(`target response status: ${res.statusCode}`);
-      logger.silly(`target response headers: ${JSON.stringify(res.headers)}`);
+      logger.silly(`Target response status: ${res.statusCode}`);
+      logger.silly(`Target response headers: ${JSON.stringify(res.headers)}`);
       // delete CORS
       delete res.headers["access-control-allow-origin"]
       delete res.headers["access-control-allow-methods"]
@@ -76,7 +76,7 @@ export async function httpProxyService(request: FastifyRequest<{
 
       res.pipe(reply.raw);
       logger.debug(`Proxy request to ${hostName} at ${path} is finished with code ${res.statusCode}`)
-      logger.silly(`Target reply headers ${JSON.stringify(res.headers)}`)
+      logger.silly(`Proxy reply headers ${JSON.stringify(res.headers)}`)
       resolve()
     });
 

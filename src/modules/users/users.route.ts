@@ -1,16 +1,21 @@
 import { FastifyInstance } from "fastify";
-import { UserService } from "./users.service";
-import { logger } from "../../utils/logger";
 import { getUsersByRoleSchema } from "./users.schema";
 import UsersController from "./users.controller";
+import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 
-export async function usersRoutes(fastify: FastifyInstance) {
+export async function usersRoutes(server: FastifyInstance) {
     const usersController = new UsersController()
-    fastify.get('/', {
+
+    server.decorateRequest('user')
+    server.addHook('preHandler', async (request, reply) => {
+        await validateJwt(request, reply);
+    })
+
+    server.get('/', {
 
     }, usersController.getUsersHandler)
 
-    fastify.get('/:role', {
+    server.get('/:role', {
         schema: {
             params: getUsersByRoleSchema,
         }

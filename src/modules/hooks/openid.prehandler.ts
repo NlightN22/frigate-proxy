@@ -23,7 +23,7 @@ interface OpenIdPrehandlerConfig {
 }
 
 async function getConfig() {
-  const configService = new ConfigService()
+  const configService = ConfigService.getInstance()
   const config: OpenIdPrehandlerConfig = {
     clientId: (await configService.getEncryptedConfig(oidpSettingsKeys.clientId)).value,
     clientSecret: (await configService.getEncryptedConfig(oidpSettingsKeys.clientSecret)).value,

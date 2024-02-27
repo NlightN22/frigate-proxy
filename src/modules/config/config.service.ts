@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes, scrypt } from "crypto";
 import { promisify } from "util";
 import { encryptionKey } from "../../consts";
-import { AppSetting } from "./app.settings";
+import { AppSetting, appSettingsKeys } from "./app.settings";
 import prisma from "../../utils/prisma";
 import { PutConfigSchema, PutConfigsSchema, ResponseConfigsSchema } from "./config.shema";
 import { oIDPSettings } from "./oidp.settings";
@@ -17,10 +17,18 @@ export interface Setting {
 export type MapSettings = [string, Setting][]
 
 class ConfigService {
+    private static _instance: ConfigService
     prismaClient = prisma.appSettings
 
-    constructor() {
+    private constructor() {
         logger.debug(`ConfigService initialized`)
+    }
+
+    public static getInstance() {
+        if (!ConfigService._instance) {
+            ConfigService._instance = new ConfigService()
+        }
+        return ConfigService._instance
     }
 
     async saveConfig(key: string, value: string) {
@@ -29,7 +37,7 @@ class ConfigService {
         if (!setting) throw new ErrorApp('validate', `ConfigService. Settings with ${key}, does not exist`)
         // check equals at prisma
         const settingDB = await this.prismaClient.findUnique({
-            where: { key: key}
+            where: { key: key }
         })
         if (settingDB && settingDB.value === value) return settingDB
         const finalValue = setting.encrypted ? await this.encrypt(value) : value
@@ -85,6 +93,15 @@ class ConfigService {
             }
         })
         return responseConfigs
+    }
+
+    async getAdminRole() {
+        try {
+            const adminRole = await this.getEncryptedConfig(appSettingsKeys.adminRole)
+            return adminRole
+        } catch {
+            return undefined
+        }
     }
 
     getMapSettings(): Map<string, Setting> {

@@ -14,7 +14,7 @@ export async function configRoutes(server: FastifyInstance) {
 
     server.register(async function (protectedRoutes) {
         protectedRoutes.decorateRequest('user')
-        protectedRoutes.addHook('preHandler', async (request, reply) => {
+        protectedRoutes.addHook('preValidation', async (request, reply) => {
             await validateJwt(request, reply);
             const allowedRoles = ['admin',]
             await validateRole(request, reply, allowedRoles);

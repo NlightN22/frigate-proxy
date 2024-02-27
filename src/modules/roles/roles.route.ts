@@ -8,7 +8,7 @@ export async function rolesRoutes(server: FastifyInstance) {
     const controller = new RolesController()
 
     server.decorateRequest('user')
-    server.addHook('preHandler', async (request, reply) => {
+    server.addHook('preValidation', async (request, reply) => {
         await validateJwt(request, reply);
     })
 
@@ -21,7 +21,7 @@ export async function rolesRoutes(server: FastifyInstance) {
             }
         },
         preValidation: async (request, reply) => {
-            const allowedRoles = ['admin',]
+            const allowedRoles = ['admin']
             await validateRole(request, reply, allowedRoles);
         }
     }, controller.updateRoleCamerasHandler)
@@ -34,7 +34,7 @@ export async function rolesRoutes(server: FastifyInstance) {
             }
         },
         preValidation: async (request, reply) => {
-            const allowedRoles = ['admin',]
+            const allowedRoles = ['admin']
             await validateRole(request, reply, allowedRoles);
         }
     }, controller.deleteRoleCamerasHandler)

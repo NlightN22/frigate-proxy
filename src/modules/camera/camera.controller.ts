@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { withErrorHandler } from "../hooks/error.handler";
 import { CreateCameraSchema, ResponseCameraSchema, UpdateCameraSchema, createCameraSchema, updateCameraSchema } from "./camera.schema";
 import CameraService from "./camera.service";
+import { z } from "zod";
 
 
 class CameraController {
@@ -25,7 +26,18 @@ class CameraController {
     })
 
     getCamerasHandler = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
-        const servers = await this.cameraService.getAllCameras()
+        const roles = req.user?.roles || []
+        const servers = await this.cameraService.getAllCameras(roles)
+        rep.send(servers)
+    })
+
+    getCamerasByHostHandler = withErrorHandler(async (req: FastifyRequest<{
+        Params: { id: string }
+    }>, rep: FastifyReply) => {
+        const { id } = req.params
+        const pasedId = z.string().parse(id)
+        const roles = req.user?.roles || []
+        const servers = await this.cameraService.getAllCamerasByHost(roles, pasedId)
         rep.send(servers)
     })
 

@@ -7,7 +7,7 @@ export async function usersRoutes(server: FastifyInstance) {
     const usersController = new UsersController()
 
     server.decorateRequest('user')
-    server.addHook('preHandler', async (request, reply) => {
+    server.addHook('preValidation', async (request, reply) => {
         await validateJwt(request, reply);
     })
 

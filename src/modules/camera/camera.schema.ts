@@ -11,6 +11,26 @@ export const responseCameraCoreSchema = {
     config: z.record(z.any()).nullable().optional(),
 }
 
+export const getByHostIdSchema = {
+    type: 'object',
+    properties: {
+        id: {
+            type: 'string',
+            description: 'Host ID',
+        },
+    }
+}
+
+export const getByCameraIdSchema = {
+    type: 'object',
+    properties: {
+        id: {
+            type: 'string',
+            description: 'Camera ID',
+        },
+    }
+}
+
 const hostCore = {
     id: z.string(),
     createAt: z.date(),

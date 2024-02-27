@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { $ref } from "./camera.schema";
+import { $ref, getByCameraIdSchema, getByHostIdSchema } from "./camera.schema";
 import CameraController from "./camera.controller";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 
@@ -7,7 +7,7 @@ export async function cameraRoutes (server: FastifyInstance) {
     const controller = new CameraController()
 
     server.decorateRequest('user')
-    server.addHook('preHandler', async (request, reply) => {
+    server.addHook('preValidation', async (request, reply) => {
         await validateJwt(request, reply);
     })
 
@@ -28,8 +28,18 @@ export async function cameraRoutes (server: FastifyInstance) {
         }
     }, controller.getCamerasHandler)
 
+    server.get('/host/:id', {
+        schema:{
+            params: getByHostIdSchema,
+            response: {
+                200: $ref("responseCamerasSchema")
+            }
+        }
+    }, controller.getCamerasByHostHandler)
+
     server.get('/:id', {
         schema:{
+            params: getByCameraIdSchema,
             response: {
                 200: $ref("responseCameraSchema")
             }
@@ -47,6 +57,7 @@ export async function cameraRoutes (server: FastifyInstance) {
     
     server.delete('/:id', {
         schema:{
+            params: getByCameraIdSchema,
             response: {
                 200: $ref("responseCameraSchema")
             }

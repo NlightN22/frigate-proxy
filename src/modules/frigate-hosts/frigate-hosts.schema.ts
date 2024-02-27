@@ -66,7 +66,7 @@ export const responseHostCoreSchema = {
 }
 export const responseHostSchema = z.object({
     ...responseHostCoreSchema,
-    cameras: z.object({ ...responseCameraCoreSchema }).array().optional()
+    // cameras: z.object({ ...responseCameraCoreSchema }).array().optional()
 })
 
 export const deleteHostSchema = z.object({

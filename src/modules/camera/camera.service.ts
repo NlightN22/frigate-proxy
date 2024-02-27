@@ -1,14 +1,16 @@
-import { Camera } from "@prisma/client";
+import { Camera, Role } from "@prisma/client";
 import prisma from "../../utils/prisma";
 import { ErrorApp } from "../hooks/error.handler";
 import { CreateCameraSchema, UpdateCameraSchema } from "./camera.schema";
 import { logger } from "../../utils/logger";
 import { init } from "i18next";
 import { sleep } from "../../utils/sleep";
+import ConfigService from "../config/config.service";
 
 
 class CameraService {
     private prismaClient = prisma.camera
+    private configService = ConfigService.getInstance()
 
     constructor() {
         logger.debug(`CameraService initialized`)
@@ -24,8 +26,57 @@ class CameraService {
         })
     }
 
-    async getAllCameras() {
+    async getAllCameras(userRoles: string[]) {
+        const adminRole = await this.configService.getAdminRole()
+        if (!adminRole || userRoles.find(role => role === adminRole.value)) {
+            return await this.prismaClient.findMany({
+                include: {
+                    frigateHost: true,
+                    roles: true
+                }
+            })
+        }
         return await this.prismaClient.findMany({
+            where: {
+                roles: {
+                    some: {
+                        name: {
+                            in: userRoles
+                        }
+                    }
+                }
+            },
+            include: {
+                frigateHost: true,
+                roles: true
+            }
+        })
+    }
+
+    async getAllCamerasByHost(userRoles: string[], hostId: string) {
+        const adminRole = await this.configService.getAdminRole()
+        if (!adminRole || userRoles.find(role => role === adminRole.value)) {
+            return await this.prismaClient.findMany({
+                where: {
+                    frigateHostId: hostId
+                },
+                include: {
+                    frigateHost: true,
+                    roles: true
+                }
+            })
+        }
+        return await this.prismaClient.findMany({
+            where: {
+                frigateHostId: hostId,
+                roles: {
+                    some: {
+                        name: {
+                            in: userRoles
+                        }
+                    }
+                }
+            },
             include: {
                 frigateHost: true,
                 roles: true

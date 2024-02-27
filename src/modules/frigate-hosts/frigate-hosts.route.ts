@@ -9,7 +9,7 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
     const controller = new FrigateHostController()
 
     server.decorateRequest('user')
-    server.addHook('preHandler', async (request, reply) => {
+    server.addHook('preValidation', async (request, reply) => {
         await validateJwt(request, reply);
     })
 
@@ -17,7 +17,6 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
     // await validateRole(request, reply, allowedRoles);
     server.get('/', {
         schema: {
-            querystring: getHostWithIncludeSchema,
             response: {
                 200: $ref("responseHostsSchema")
             }

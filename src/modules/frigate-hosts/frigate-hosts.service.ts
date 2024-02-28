@@ -136,7 +136,7 @@ class FrigateHostsService {
                 status: true
             }
         } catch {
-            logger.error(`FrigateHostsService getHostState: ${host.name}`)
+            logger.debug(`FrigateHostsService getHostState: ${host.name}`)
         }
         return {
             ...host,

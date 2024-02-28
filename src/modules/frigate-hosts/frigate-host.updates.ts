@@ -47,6 +47,8 @@ class FrigateHostUpdates {
         const updateConditions = !FrigateHostUpdates._updateHostsStateProgress || !dev.disableUpdates
         while (true) {
             if (updateConditions) {
+                FrigateHostUpdates._updateHostsStateProgress = true
+                logger.debug(`FrigateHostUpdates Start hosts states update...`)
                 const enabledHosts = await this.prismaClient.findMany({ where: { enabled: true } })
                 if (enabledHosts.length > 0) {
                     const startTime = Date.now()
@@ -71,6 +73,7 @@ class FrigateHostUpdates {
                                 Success: ${successCount}, Failed: ${failtureCount}`)
                 }
             }
+            FrigateHostUpdates._updateHostsStateProgress = false
             await sleep(updateTimer)
         }
     }

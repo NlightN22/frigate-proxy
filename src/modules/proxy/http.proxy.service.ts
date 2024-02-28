@@ -1,13 +1,40 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { logger } from "../../utils/logger";
 import { stringify } from "querystring";
-import http from 'http'
+import http, { request } from 'http'
 import https from 'https'
 import { ProxyParamsSchema, proxyParams } from "./proxy.schema";
+import ConfigService from "../config/config.service";
+
+export const allowedNotAdminRoutes = [
+  /^vod\/.+?\/[^\/]+\.m3u8$/,
+  /^vod\/.+?\/[^\/]+\.ts$/,
+  /^vod\/.+?\/[^\/]+\.mp4$/,
+  /^vod\/.+?\/[^\/]+\.m4s$/,
+  /^api\/export\/[^\/]+\/start\/\d+\/end\/\d+$/,
+  /^api\/export\/[^\/]+\.mp4$/,
+  /^exports\/$/,
+  /^api\/events$/,
+  /^api\/events\/[^\/]+\/thumbnail\.jpg$/,
+  /^api\/events\/[^\/]+\/clip\.mp4$/,
+  /^api\/[^\/]+\/events\/summary$/,
+  /^api\/[^\/]+\/recordings\/.*$/,
+  /^api\/[^\/]+\/latest\.jpg$/,
+]
+
+export const allowedNotUserRoutes = [
+  /^api\/events\/[^\/]+\/clip\.mp4$/,
+]
+
+export const getRequestPath = (request: FastifyRequest) => {
+  const requestParams = request.params as any
+  return requestParams['*'] as string
+}
 
 export async function httpProxyService(request: FastifyRequest<{
   Params: ProxyParamsSchema
 }>, reply: FastifyReply) {
+  const configService = ConfigService.getInstance()
   const { body, query, params } = request;
   let hostName: string | undefined
   try {
@@ -18,9 +45,23 @@ export async function httpProxyService(request: FastifyRequest<{
   }
   if (!hostName) reply.code(400).send({ error: 'Need hostname at params' })
   const requestParams = params as any
+  logger.silly(`query request params: ${JSON.stringify(requestParams)}`)
   logger.silly(`query hostName: ${JSON.stringify(hostName)}`)
 
   const queryString = stringify(query as any)
+
+  // controlled request params and roles
+  const adminRole = await configService.getAdminRole()
+  if (adminRole?.value) {
+    const requestPath = requestParams['*']
+    const isAllowedRoute = allowedNotAdminRoutes.some(pattern => pattern.test(requestPath))
+    logger.silly(`query request allowed role: ${isAllowedRoute}`)
+    if (!isAllowedRoute && !(request.user?.roles.some(role => role === adminRole.value))) {
+      logger.debug(`query request params: ${JSON.stringify(requestParams)}`)
+      logger.error(`Not allowed route and not admin:${adminRole.value} at user roles:${JSON.stringify(request.user?.roles)}`)
+      return reply.code(403).send({ error: 'Not allowed role and allowed route to proxy' })
+    }
+  }
 
   const target = `http://${hostName}/${requestParams['*']}${queryString ? '?' + queryString : ''}`
 

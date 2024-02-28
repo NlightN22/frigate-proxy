@@ -23,6 +23,7 @@ old.*
 /.nyc_output
 .tap
 
+
 # IDEs and editors
 /.idea
 .project
@@ -41,3 +42,5 @@ old.*
 
 # docker
 *docker-compose*
+keyfile
+/mongodb

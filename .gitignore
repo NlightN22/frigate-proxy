@@ -41,6 +41,8 @@ old.*
 !.vscode/extensions.json
 
 # docker
-*docker-compose*
+docker-compose.yml
+!./example/*
 keyfile
 /mongodb
+

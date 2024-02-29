@@ -1,7 +1,9 @@
 import { buildJsonSchemas } from "fastify-zod";
 import { z } from "zod";
+import { responseHostSchema } from "../frigate-hosts/frigate-hosts.schema";
+import { responseRoleSchema } from "../roles/roles.schema";
 
-export const responseCameraCoreSchema = {
+export const responseCameraCoreSchema = z.object({
     id: z.string(),
     createAt: z.date(),
     updateAt: z.date(),
@@ -9,7 +11,7 @@ export const responseCameraCoreSchema = {
     url: z.string().url().optional(),
     state: z.boolean().nullable(),
     config: z.record(z.any()).nullable().optional(),
-}
+})
 
 export const getByHostIdSchema = {
     type: 'object',
@@ -31,33 +33,12 @@ export const getByCameraIdSchema = {
     }
 }
 
-const hostCore = {
-    id: z.string(),
-    createAt: z.date(),
-    updateAt: z.date(),
-    name: z.string(),
-    host: z.string(),
-}
+export const responseCameraSchema = responseCameraCoreSchema.merge(z.object({
+    frigateHost: responseHostSchema.optional(),
+    roles: responseRoleSchema.array().optional(),
+}))
 
-const roleCore = {
-    id: z.string(),
-    name: z.string(),
-    createAt: z.date(),
-    updateAt: z.date(),
-}
-
-export const responseCameraSchema = z.object({
-    ...responseCameraCoreSchema,
-    frigateHost: z.object({ ...hostCore }).optional(),
-    roles: z.object({ ...roleCore }).array().optional(),
-})
-
-export const responseCamerasSchema = z.object({
-    ...responseCameraCoreSchema,
-    frigateHost: z.object({ ...hostCore }).optional(),
-    roles: z.object({ ...roleCore }).array().optional(),
-}).array()
-
+export const responseCamerasSchema = responseCameraSchema.array()
 
 /**
  * Without set frigate host create camera only for live view.

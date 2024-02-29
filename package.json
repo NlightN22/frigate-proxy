@@ -6,6 +6,7 @@
   "scripts": {
     "prod": "node dist/app.js",
     "build": "tsc",
+    "buildtodocker": "docker compose down ; tsc ; $VERSION=0.1 ; docker build --pull --rm -t oncharterliz/frigate-proxy:latest -t oncharterliz/frigate-proxy:$VERSION '.' ; docker-compose up -d",
     "start": "ts-node src/app.ts",
     "dev": "nodemon src/app.ts",
     "lint": "eslint . --ext .ts",

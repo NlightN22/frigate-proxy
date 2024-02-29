@@ -1,14 +1,6 @@
 import { z } from "zod";
 import { buildJsonSchemas } from "fastify-zod";
-import { responseCameraCoreSchema } from "../camera/camera.schema";
-
-const roleSchema = z.object({
-    id: z.string(),
-    createAt: z.date(),
-    updateAt: z.date(),
-    name: z.string(),
-    cameraIDs: z.string().array(),
-});
+import { responseCameraSchema, responseCamerasSchema } from "../camera/camera.schema";
 
 const cameraSchema = z.object({
     id: z.string(),
@@ -32,15 +24,6 @@ const missingRoleSchema = z.object({
 
 const missingRolesSchema = z.array(missingRoleSchema);
 
-// const missingRolesSchema = z.array(
-//     z.intersection(
-//         z.object({
-//             cameras: z.array(z.object(responseCameraCoreSchema)),
-//         }),
-//         roleSchema
-//     )
-// );
-
 export const getRoleByIdSchema = {
     type: 'object',
     properties: {
@@ -62,27 +45,17 @@ export const addRoleCamerasSchema = z.object({
 })
 export const deleteRoleCamerasSchema = addRoleCamerasSchema
 
-
-const ResponseCoreSchema = ({
+const responseCoreSchema = z.object({
     id: z.string(),
     name: z.string(),
     createAt: z.date(),
     updateAt: z.date(),
 })
-export const responseRoleSchema = z.object(ResponseCoreSchema)
+export const responseRoleSchema = responseCoreSchema
 
-export const responseRolesAndCamerasSchema = z.object({
-    ...ResponseCoreSchema,
-    cameras: z.object({
-        id: z.string(),
-        createAt: z.date(),
-        updateAt: z.date(),
-        name: z.string(),
-        url: z.string().optional(),
-        frigateHostId: z.string().optional(),
-        rolesIDs: z.string().array()
-    }).array().optional()
-})
+export const responseRolesAndCamerasSchema = responseCoreSchema.merge(z.object({
+    cameras: responseCamerasSchema
+}))
 
 const responseRolesSchema = z.array(responseRoleSchema)
 

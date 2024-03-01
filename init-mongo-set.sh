@@ -1,3 +1,5 @@
+chmod 400 /opt/keyfile && \
+chown 999 /opt/keyfile && \
 mongod --bind_ip_all --replSet rs0 --keyFile /opt/keyfile &
 MONGO_PID=$!
 

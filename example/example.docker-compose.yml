@@ -6,11 +6,13 @@ services:
     environment:
       REACT_APP_HOST: localhost
       REACT_APP_PORT: 5173
-      REACT_APP_FRIGATE_PROXY: http://localhost:4000
+      REACT_APP_FRIGATE_PROXY: http://0.0.0.0:4000 # External proxy ip|fqdn for connections from browser
       REACT_APP_OPENID_SERVER: https://server:port/realms/your-realm
       REACT_APP_CLIENT_ID: frontend-client
     ports:
       - 5173:80 # set your port here
+    depends_on:
+      - backend      
 
   backend:
     image: oncharterliz/frigate-proxy:latest
@@ -31,7 +33,7 @@ services:
     image: mongo
     command: ["/bin/bash", "/docker-entrypoint-initdb.d/init-mongo-set.sh"]
     ports:
-      - 127.0.0.1:27018:27017
+      - 127.0.0.1:27017:27017
     volumes:
       - ./mongodb/data:/data/db
       - ./keyfile:/opt/keyfile # Don't forget to create or add keyfile, e.g. openssl rand -base64 756 > keyfile

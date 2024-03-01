@@ -8,7 +8,6 @@ Based on the roles that you have defined in OIDP (OpenID provider), you can gran
 I created frigate-proxy server witch proxy requests frigate servers API.
 Proxy API at http://your-backend.com:4000/documentation
 
-
 ## Installation
 * Installing and configuring the keycloak authorization server
 * Create keycloak client for frigate-proxy server. You can test them on https://www.keycloak.org/app/
@@ -33,8 +32,8 @@ docker compose up -d
 ## Necessary environment variables in docker-compose.yml:
 ```bash
 SERVER=http://0.0.0.0:4000 # FQDN or IP
-DATABASE_URL="mongodb://username:password@localhost:27017/database-name?retryWrites=true&w=majority&authSource=admin" # Mongo DB at cluster mode
-ENCRYPTION_KEY="YOUR_SUPER_SECRET_KEY_FOR_ENCRYPTED_SETTINGS"
+DATABASE_URL="mongodb://username:password@localhost:27017/database-name?retryWrites=true&w=majority&authSource=admin" # Mongo DB at replica set mode
+ENCRYPTION_KEY="YOUR_SUPER_SECRET_KEY_FOR_ENCRYPTED_SETTINGS" # for saving and reading encrypt settings in DB
 ```
 
 ### Additional for Proxmox

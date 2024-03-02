@@ -10,6 +10,11 @@ export async function validateRole(request: FastifyRequest, reply: FastifyReply,
         logger.warn('Not set allowed roles to route. Pass')
         return
     }
+    const oidpConfig = await configService.getOIDPConfig()
+    if (!oidpConfig) {
+        logger.warn('OpenID provider not set at config. Pass')
+        return
+    }
     const adminRole = await configService.getAdminRole()
     if (!adminRole) {
         logger.warn('Admin role not set at config. Pass')

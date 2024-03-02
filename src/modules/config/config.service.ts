@@ -4,10 +4,11 @@ import { encryptionKey } from "../../consts";
 import { AppSetting, appSettingsKeys } from "./app.settings";
 import prisma from "../../utils/prisma";
 import { PutConfigSchema, PutConfigsSchema, ResponseConfigsSchema } from "./config.shema";
-import { oIDPSettings } from "./oidp.settings";
+import { oIDPSettings, oidpSettingsKeys } from "./oidp.settings";
 import { logger } from "../../utils/logger";
 import { ErrorApp } from "../hooks/error.handler";
 import { allSettings } from "./all.settings";
+import { OIDPConfig } from "../oidp/oidp.service";
 
 export interface Setting {
     description: string,
@@ -100,6 +101,21 @@ class ConfigService {
             const adminRole = await this.getEncryptedConfig(appSettingsKeys.adminRole)
             return adminRole
         } catch {
+            return undefined
+        }
+    }
+
+    async getOIDPConfig(): Promise<OIDPConfig | undefined> {
+        try{
+            const config: OIDPConfig = {
+                clientId: (await this.getEncryptedConfig(oidpSettingsKeys.clientId)).value,
+                clientSecret: (await this.getEncryptedConfig(oidpSettingsKeys.clientSecret)).value,
+                clientUsername: (await this.getEncryptedConfig(oidpSettingsKeys.clientUsername)).value,
+                clientPassword: (await this.getEncryptedConfig(oidpSettingsKeys.clientPassword)).value,
+                clientURL: (await this.getEncryptedConfig(oidpSettingsKeys.realmUrl)).value,
+            }
+            return config
+        } catch{
             return undefined
         }
     }

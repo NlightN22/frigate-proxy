@@ -24,7 +24,7 @@ export enum OIDPAuthState {
     Completed,
 }
 
-interface OIDPConfig {
+export interface OIDPConfig {
     clientId: string,
     clientSecret: string,
     clientUsername: string,
@@ -103,17 +103,6 @@ class OIDPService {
         }
     }
 
-    private async getConfig() {
-        const config: OIDPConfig = {
-            clientId: (await this.configService.getEncryptedConfig(oidpSettingsKeys.clientId)).value,
-            clientSecret: (await this.configService.getEncryptedConfig(oidpSettingsKeys.clientSecret)).value,
-            clientUsername: (await this.configService.getEncryptedConfig(oidpSettingsKeys.clientUsername)).value,
-            clientPassword: (await this.configService.getEncryptedConfig(oidpSettingsKeys.clientPassword)).value,
-            clientURL: (await this.configService.getEncryptedConfig(oidpSettingsKeys.realmUrl)).value,
-        }
-        return config
-    }
-
     private async getNewToken() {
         let data: Authenticate | undefined
         while (!data) {
@@ -152,13 +141,9 @@ class OIDPService {
     }
 
     private async getRequestConfig() {
-        try {
-            const config = await this.getConfig()
-            return config
-        } catch (e) {
-            logger.error(`OIDPService cannot set request config: ${e.message}`)
-            return undefined
-        }
+        const config = await this.configService.getOIDPConfig()
+        if (!config) logger.warn(`OIDPService cannot set request config: ${config}`)
+        return config
     }
 
     private async fetchAccessToken(refreshToken: string | undefined = undefined) {

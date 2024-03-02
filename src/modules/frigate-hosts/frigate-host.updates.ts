@@ -115,7 +115,7 @@ class FrigateHostUpdates {
                         }
                     }
                 } catch (e) {
-                    logger.error(e.message)
+                    logger.error(`FrigateHostUpdates ${e.message}`)
                     updateTimer = 10000
                 } finally {
                     logger.debug(`FrigateHostUpdates End update cameras state at ${(Date.now() - startTime) / 1000} sec`)
@@ -196,7 +196,7 @@ class FrigateHostUpdates {
                     }
                 }
             } catch (e) {
-                logger.error(e.message)
+                logger.error(`FrigateHostUpdates ${e.message}`)
             } finally {
                 logger.debug(`FrigateHostUpdates End update hosts cameras at ${(Date.now() - startTime) / 1000} sec`)
                 FrigateHostUpdates._updateInProgress = false

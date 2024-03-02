@@ -2,29 +2,28 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import jwksRsa from "jwks-rsa";
 import * as jwt from 'jsonwebtoken'
 import { TokenUser } from "./token.shchema";
-import { oidpSettingsKeys } from "../config/oidp.settings";
 import { ErrorApp } from "./error.handler";
 import { logger } from "../../utils/logger";
 import ConfigService from "../config/config.service";
+import { OIDPUrls } from "../oidp/oidp.urls";
 
-const getOidpUrl = async () => {
-    try {
-        const configService = ConfigService.getInstance()
-        const config = await configService.getEncryptedConfig(oidpSettingsKeys.realmUrl)
-        return new URL(config.value)
-    } catch {
-        return undefined
-    }
+const configService = ConfigService.getInstance()
+
+const getUrl = async () => {
+    const oidpConfig = await configService.getOIDPConfig()
+    return oidpConfig?.clientURL
 }
 
 async function initializeJwksClient() {
-    const url = await getOidpUrl()
+    const url = await getUrl()
     if (!url) {
         logger.warn(`Can not get URL from config when init JwksClient`)
         return
     }
+    const certUrl = `${url.toString()}${OIDPUrls.certs}`
+    logger.debug(`initializeJwksClient ${certUrl}`)
     const client = jwksRsa({
-        jwksUri: `${url.toString()}/protocol/openid-connect/certs`
+        jwksUri: certUrl
     })
     return client;
 }
@@ -37,10 +36,10 @@ initializeJwksClient().then(client => {
 
 function getKey(header, callback) {
     if (!jwksClient) {
-        initializeJwksClient().then( client => {
+        initializeJwksClient().then(client => {
             jwksClient = client
         })
-        if (!jwksClient){
+        if (!jwksClient) {
             callback(new ErrorApp('internal', 'JWKS client not initialized'));
             return;
         }
@@ -72,9 +71,9 @@ function getKey(header, callback) {
 }
 
 export async function validateJwt(request: FastifyRequest, reply: FastifyReply) {
-    const url = await getOidpUrl();
+    const url = await getUrl()
     if (!url) {
-        logger.error(`Cannot read OIDP url from config. Pass`)
+        logger.error(`validateJwt Cannot read OIDP url from config. Pass`)
         return
     }
     const token = request.headers.authorization?.split(' ')[1]
@@ -92,7 +91,7 @@ export async function validateJwt(request: FastifyRequest, reply: FastifyReply) 
     try {
         const decoded: TokenUser = await new Promise((resolve, reject) => {
             jwt.verify(token, getKey, {
-                issuer: url.toString(),
+                issuer: [url.toString(), url.toString().replace(/\/$/, "")],
                 algorithms: ['RS256']
             }, (err, decoded) => {
                 if (err) {
@@ -113,9 +112,10 @@ export async function validateJwt(request: FastifyRequest, reply: FastifyReply) 
             name: decoded.name,
             roles: decoded.realm_access.roles
         }
-    } catch (err) {
-        if (err instanceof Error) {
-            logger.error(err.message)
+    } catch (e) {
+        const url = await getUrl()
+        if (e instanceof Error) {
+            logger.error(`validateJwt ${url} ${e.message}`)
         }
         reply.code(401).send({ error: 'Unauthorized: Invalid token.' });
     }

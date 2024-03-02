@@ -51,7 +51,6 @@ class RolesService {
     }
 
     async editCameras(roleId: string, inputCamerasID: string[]) {
-        if (inputCamerasID.length < 1) throw new ErrorApp('validate', 'Nothing to add')
         const { cameraIDs } = await this.prismaClient.findUniqueOrThrow({ where: { id: roleId } })
         const newIds = inputCamerasID.filter(inputId => !cameraIDs.includes(inputId))
         const notExistIds = cameraIDs.filter(id => !inputCamerasID.some(inputId => id === inputId))
@@ -99,7 +98,7 @@ class RolesService {
                     }
                 }
             } catch (e) {
-                logger.error(e.message)
+                logger.error(`RolesService ${e.message}`)
             } finally {
                 logger.debug(`Finish updateRoles at ${(Date.now() - startTime) / 1000} sec`)
             }

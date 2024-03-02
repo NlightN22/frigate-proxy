@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { MapSettings } from "./config.service";
 
 
@@ -29,6 +30,7 @@ export const oIDPSettings: MapSettings = [
         {
             description: 'OIDP Client username',
             encrypted: false,
+            validateFn: (value) => z.string().parse(value),
         },
     ],
     [
@@ -43,6 +45,7 @@ export const oIDPSettings: MapSettings = [
         {
             description: 'OIDP realm URL path',
             encrypted: false,
+            validateFn: (value) => z.string().url().parse(value),
         },
     ]
 ]

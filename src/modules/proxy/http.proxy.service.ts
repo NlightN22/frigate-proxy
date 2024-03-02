@@ -45,8 +45,8 @@ export async function httpProxyService(request: FastifyRequest<{
   }
   if (!hostName) reply.code(400).send({ error: 'Need hostname at params' })
   const requestParams = params as any
-  logger.silly(`query request params: ${JSON.stringify(requestParams)}`)
-  logger.silly(`query hostName: ${JSON.stringify(hostName)}`)
+  logger.silly(`httpProxyService query request params: ${JSON.stringify(requestParams)}`)
+  logger.silly(`httpProxyService query hostName: ${JSON.stringify(hostName)}`)
 
   const queryString = stringify(query as any)
 
@@ -55,10 +55,10 @@ export async function httpProxyService(request: FastifyRequest<{
   if (adminRole?.value) {
     const requestPath = requestParams['*']
     const isAllowedRoute = allowedNotAdminRoutes.some(pattern => pattern.test(requestPath))
-    logger.silly(`query request allowed role: ${isAllowedRoute}`)
+    logger.silly(`httpProxyService query request allowed role: ${isAllowedRoute}`)
     if (!isAllowedRoute && !(request.user?.roles.some(role => role === adminRole.value))) {
-      logger.debug(`query request params: ${JSON.stringify(requestParams)}`)
-      logger.error(`Not allowed route and not admin:${adminRole.value} at user roles:${JSON.stringify(request.user?.roles)}`)
+      logger.debug(`httpProxyService query request params: ${JSON.stringify(requestParams)}`)
+      logger.error(`httpProxyService Not allowed route and not admin:${adminRole.value} at user roles:${JSON.stringify(request.user?.roles)}`)
       return reply.code(403).send({ error: 'Not allowed role and allowed route to proxy' })
     }
   }
@@ -85,11 +85,11 @@ export async function httpProxyService(request: FastifyRequest<{
   const port = targetUrl.port
   const hostname = targetUrl.hostname
 
-  logger.silly(`target path: ${JSON.stringify(path)}`)
-  logger.silly(`target method: ${JSON.stringify(method)}`)
-  logger.silly(`target headers after: ${JSON.stringify(headers)}`)
-  logger.silly(`target hostname: ${JSON.stringify(hostname)}`)
-  logger.silly(`target port: ${JSON.stringify(port)}`)
+  logger.silly(`httpProxyService target path: ${JSON.stringify(path)}`)
+  logger.silly(`httpProxyService target method: ${JSON.stringify(method)}`)
+  logger.silly(`httpProxyService target headers after: ${JSON.stringify(headers)}`)
+  logger.silly(`httpProxyService target hostname: ${JSON.stringify(hostname)}`)
+  logger.silly(`httpProxyService target port: ${JSON.stringify(port)}`)
 
   const options = {
     hostname: hostname,
@@ -116,8 +116,8 @@ export async function httpProxyService(request: FastifyRequest<{
       reply.raw.writeHead(res.statusCode || 500, headersWithCors);
 
       res.pipe(reply.raw);
-      logger.debug(`Proxy request to ${hostName} at ${path} is finished with code ${res.statusCode}`)
-      logger.silly(`Proxy reply headers ${JSON.stringify(res.headers)}`)
+      logger.debug(`httpProxyService Proxy request to ${hostName} at ${path} is finished with code ${res.statusCode}`)
+      logger.silly(`httpProxyService Proxy reply headers ${JSON.stringify(res.headers)}`)
       resolve()
     });
 
@@ -126,7 +126,7 @@ export async function httpProxyService(request: FastifyRequest<{
     }
 
     proxyRequest.on('error', (error) => {
-      logger.debug(`Proxy request to ${hostName} at ${path} is finished with error`)
+      logger.debug(`httpProxyService Proxy request to ${hostName} at ${path} is finished with error`)
       reply.send(error);
       reject(error)
     });

@@ -9,10 +9,12 @@ import { logger } from "../../utils/logger";
 import { ErrorApp } from "../hooks/error.handler";
 import { allSettings } from "./all.settings";
 import { OIDPConfig } from "../oidp/oidp.service";
+import { z } from "zod";
 
 export interface Setting {
     description: string,
     encrypted: boolean,
+    validateFn?: (value: any) => void
 }
 
 export type MapSettings = [string, Setting][]
@@ -107,15 +109,20 @@ class ConfigService {
 
     async getOIDPConfig(): Promise<OIDPConfig | undefined> {
         try{
+            const configUrl = (await this.getEncryptedConfig(oidpSettingsKeys.realmUrl)).value
+            const parsedZod = z.string().url().parse(configUrl)
+            const parsedURL: URL = new URL(parsedZod)
             const config: OIDPConfig = {
                 clientId: (await this.getEncryptedConfig(oidpSettingsKeys.clientId)).value,
                 clientSecret: (await this.getEncryptedConfig(oidpSettingsKeys.clientSecret)).value,
                 clientUsername: (await this.getEncryptedConfig(oidpSettingsKeys.clientUsername)).value,
                 clientPassword: (await this.getEncryptedConfig(oidpSettingsKeys.clientPassword)).value,
-                clientURL: (await this.getEncryptedConfig(oidpSettingsKeys.realmUrl)).value,
+                clientURL: parsedURL
             }
             return config
-        } catch{
+        } catch (e) {
+            if (e instanceof Error)
+                logger.warn(`ConfigService getOIDPConfig: ${e.message}`)
             return undefined
         }
     }

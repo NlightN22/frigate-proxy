@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "axios"
+import axios, { AxiosError, AxiosResponse } from "axios"
 import { logger } from "../../utils/logger"
 import { OIDPUrls } from "./oidp.urls"
 import { OIDPRole, AuthUser, UserByRole } from "./oidp.schema"
@@ -29,7 +29,7 @@ export interface OIDPConfig {
     clientSecret: string,
     clientUsername: string,
     clientPassword: string,
-    clientURL: string,
+    clientURL: URL,
 }
 
 class OIDPService {
@@ -155,7 +155,7 @@ class OIDPService {
             return
         }
         logger.debug('OIDPService fetchAccessToken...')
-        const url = requestConfig.clientURL + OIDPUrls.auth
+        const url = requestConfig.clientURL.toString() + OIDPUrls.auth
         const reqXHTML = this.setRequestBody(refreshToken, requestConfig)
         if (!reqXHTML) {
             logger.error(`OIDPService cannot set request reqXHTML`)
@@ -172,7 +172,12 @@ class OIDPService {
             return this.mapToAuthenticate(data)
         } catch (e) {
             if (e instanceof Error) {
-                logger.error(`OIDPService: ${e.message}`);
+                logger.error(`OIDPService fetch access token: ${e.message}`)
+                if (e instanceof AxiosError) {
+                    logger.error(`OIDPService fetch access url: ${url}`)
+                    logger.error(`OIDPService fetch access client_id: ${requestConfig.clientId}`)
+                    logger.error(`OIDPService fetch access response: ${e.response?.data}`)
+                }
             }
             OIDPService._authState = OIDPAuthState.NotStarted
             return undefined
@@ -214,7 +219,7 @@ class OIDPService {
         }
     }
 
-    private async fetcher(authURL: string) {
+    private async fetcher(path: string) {
         if (!OIDPService._authenticate || !OIDPService._authenticate.access_token) throw Error(`OIDPService Authentication not completed, auth state ${OIDPService.authState}`)
         const accessToken = OIDPService._authenticate.access_token
         if (accessToken) {
@@ -226,8 +231,8 @@ class OIDPService {
         if (!this.verifyJWT(accessToken)) throw new ErrorApp('internal', 'OIDPService acess token not valid')
         const requestConfig = await this.getRequestConfig()
         if (!requestConfig) throw Error(`OIDPService config not set`)
-        const oidpURL = new URL(requestConfig.clientURL)
-        const url = oidpURL.protocol + '//' + oidpURL.host + authURL
+        const oidpURL = requestConfig.clientURL
+        const url = oidpURL.protocol + '//' + oidpURL.host + '/' + path
         try {
             const response = await axios.get(url, {
                 headers: { Authorization: `Bearer ${OIDPService._authenticate.access_token}` },
@@ -236,7 +241,12 @@ class OIDPService {
             return response.data
         } catch (e) {
             if (e instanceof Error) {
-                logger.error(`OIDPService: ${e.message}`);
+                logger.error(`OIDPService: ${e.message}`)
+                if (e instanceof AxiosError) {
+                    logger.error(`OIDPService fetch access url: ${url}`)
+                    logger.error(`OIDPService fetch access client_id: ${requestConfig.clientId}`)
+                    logger.error(`OIDPService fetch access response: ${e.response?.data}`)
+                }
             }
             return null
         }
@@ -248,7 +258,7 @@ class OIDPService {
             if (decoded && decoded.exp) return this.isTokenExpired(decoded.exp)
             return false
         } catch (e) {
-            logger.error(e.message)
+            logger.error(`OIDPService ${e.message}`)
             return false
         }
     }
@@ -258,7 +268,7 @@ class OIDPService {
             const decoded = jwtDecode<JwtPayload>(token)
             return decoded.exp
         } catch (e) {
-            logger.error(e.message)
+            logger.error(`OIDPService ${e.message}`)
             return undefined
         }
     }

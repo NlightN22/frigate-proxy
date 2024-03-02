@@ -14,7 +14,7 @@ async function main() {
         await server.listen(fastifyOptions)
         logger.info(`Server ready at ${hostURL.toString()}`)
     } catch (e) {
-        logger.error(e.message)
+        logger.error(`main ${e.message}`)
         process.exit(1)
     }
 }

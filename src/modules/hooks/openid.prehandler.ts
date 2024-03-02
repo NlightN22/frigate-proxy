@@ -36,7 +36,7 @@ async function getOpenIdClient() {
   const config = await getConfig()
   if (!config) throw new ErrorApp('internal','Cannot get OpenIdPrehandlerConfig')
   const url = new URL(config.realmURL)
-  const authUrl = `${url.toString()}${OIDPUrls.openidConfiguration}`
+  const authUrl = `${url.toString()}/${OIDPUrls.openidConfiguration}`
   const issuer = await Issuer.discover(authUrl)
   const client = new issuer.Client({
     'client_id': config.clientId,
@@ -66,7 +66,7 @@ export async function validateToken(request: FastifyRequest, reply: FastifyReply
 
 
   } catch (error) {
-    logger.error(error.message)
+    logger.error(`validateToken ${error.message}`)
     reply.code(401).send({ error: 'Unauthorized' });
   }
 }

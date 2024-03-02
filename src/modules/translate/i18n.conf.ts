@@ -30,8 +30,8 @@ i18n
       }
     }
   }, (err, t) => {
-    if (err) return logger.error('Something went wrong while loading i18next', err);
-    logger.debug('Translator i18next is initialized');
+    if (err) return logger.error(`i18n Something went wrong while loading i18next ${err}`);
+    logger.debug('i18n Translator i18next is initialized');
   });
 
 z.setErrorMap(makeZodI18nMap({

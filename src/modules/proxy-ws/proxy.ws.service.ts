@@ -60,7 +60,7 @@ export async function proxyWsService(connection: SocketStream, req: FastifyReque
         target.on('unexpected-response', () => close(connections, 1011, 'unexpected response'))
 
     } catch (e) {
-        logger.error(e.message)
+        logger.error(`proxyWsService ${e.message}`)
         close(connections, 1011, e.message)
         return
     }

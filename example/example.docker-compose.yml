@@ -4,13 +4,11 @@ services:
   front:
     image: oncharterliz/multi-frigate:latest
     environment:
-      REACT_APP_HOST: localhost
-      REACT_APP_PORT: 5173
-      REACT_APP_FRIGATE_PROXY: http://0.0.0.0:4000 # External proxy ip|fqdn for connections from browser
-      REACT_APP_OPENID_SERVER: https://server:port/realms/your-realm
-      REACT_APP_CLIENT_ID: frontend-client
+      FRIGATE_PROXY: http://localhost:4000
+      OPENID_SERVER: https://server:port/realms/your-realm
+      CLIENT_ID: frontend-client
     ports:
-      - 5173:80 # set your port here
+      - 80:80 # set your port here
     depends_on:
       - backend      
 
@@ -28,7 +26,7 @@ services:
       - mongo
 
   # Mongo in replica set mode. Backend works with only replica set mongo db
-  # connect with compass like mongodb://user:password@localhost:27017/?authSource=admin&directConnection=true
+  # connect with compass at direct connection mode, e.g mongodb://user:password@localhost:27017/?authSource=admin&directConnection=true
   mongo:
     image: mongo
     command: ["/bin/bash", "/docker-entrypoint-initdb.d/init-mongo-set.sh"]
@@ -36,7 +34,7 @@ services:
       - 127.0.0.1:27017:27017
     volumes:
       - ./mongodb/data:/data/db
-      - ./keyfile:/opt/keyfile # Don't forget to create or add keyfile, e.g. openssl rand -base64 756 > keyfile
+      - ./keyfile:/opt/keyfile # Don't forget to create or add keyfile, e.g. `openssl rand -base64 756 > keyfile`
       - ./init-mongo-set.sh:/docker-entrypoint-initdb.d/init-mongo-set.sh # mongo set init script
     environment:
       REPLICA_SET_ADMIN_NAME: db-username

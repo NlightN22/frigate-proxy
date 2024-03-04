@@ -20,7 +20,7 @@ async function initializeJwksClient() {
         logger.warn(`Can not get URL from config when init JwksClient`)
         return
     }
-    const certUrl = `${url.toString()}${OIDPUrls.certs}`
+    const certUrl = `${url}${OIDPUrls.certs}`
     logger.debug(`initializeJwksClient ${certUrl}`)
     const client = jwksRsa({
         jwksUri: certUrl

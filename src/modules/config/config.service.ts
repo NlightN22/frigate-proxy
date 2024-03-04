@@ -10,6 +10,7 @@ import { ErrorApp } from "../hooks/error.handler";
 import { allSettings } from "./all.settings";
 import { OIDPConfig } from "../oidp/oidp.service";
 import { z } from "zod";
+import { OIDPUrls } from "../oidp/oidp.urls";
 
 export interface Setting {
     description: string,
@@ -111,13 +112,13 @@ class ConfigService {
         try{
             const configUrl = (await this.getEncryptedConfig(oidpSettingsKeys.realmUrl)).value
             const parsedZod = z.string().url().parse(configUrl)
-            const parsedURL: URL = new URL(parsedZod)
+            const urlWithSlash = parsedZod.endsWith('/') ? parsedZod : parsedZod + '/'
             const config: OIDPConfig = {
                 clientId: (await this.getEncryptedConfig(oidpSettingsKeys.clientId)).value,
                 clientSecret: (await this.getEncryptedConfig(oidpSettingsKeys.clientSecret)).value,
                 clientUsername: (await this.getEncryptedConfig(oidpSettingsKeys.clientUsername)).value,
                 clientPassword: (await this.getEncryptedConfig(oidpSettingsKeys.clientPassword)).value,
-                clientURL: parsedURL
+                clientURL: urlWithSlash
             }
             return config
         } catch (e) {

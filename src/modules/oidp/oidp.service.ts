@@ -29,7 +29,7 @@ export interface OIDPConfig {
     clientSecret: string,
     clientUsername: string,
     clientPassword: string,
-    clientURL: URL,
+    clientURL: string,
 }
 
 class OIDPService {
@@ -155,7 +155,7 @@ class OIDPService {
             return
         }
         logger.debug('OIDPService fetchAccessToken...')
-        const url = requestConfig.clientURL.toString() + OIDPUrls.auth
+        const url = requestConfig.clientURL + OIDPUrls.auth
         const reqXHTML = this.setRequestBody(refreshToken, requestConfig)
         if (!reqXHTML) {
             logger.error(`OIDPService cannot set request reqXHTML`)
@@ -231,7 +231,7 @@ class OIDPService {
         if (!this.verifyJWT(accessToken)) throw new ErrorApp('internal', 'OIDPService acess token not valid')
         const requestConfig = await this.getRequestConfig()
         if (!requestConfig) throw Error(`OIDPService config not set`)
-        const oidpURL = requestConfig.clientURL
+        const oidpURL = new URL (requestConfig.clientURL)
         const url = oidpURL.protocol + '//' + oidpURL.host + '/' + path
         try {
             const response = await axios.get(url, {

@@ -122,7 +122,14 @@ export async function httpProxyService(request: FastifyRequest<{
     });
 
     if (request.raw.method !== 'GET' && request.raw.method !== 'HEAD' && request.body) {
-      proxyRequest.write(JSON.stringify(request.body));
+      const contentType = request.headers['content-type']
+      let bodyData
+      if (contentType === 'application/json') {
+        bodyData = JSON.stringify(request.body)
+      } else {
+        bodyData = request.body
+      }
+      proxyRequest.write(bodyData);
     }
 
     proxyRequest.on('error', (error) => {

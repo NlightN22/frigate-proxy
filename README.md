@@ -29,14 +29,27 @@ docker compose config
 docker compose up -d
 ```
 
-## Necessary environment variables in docker-compose.yml:
-```bash
-SERVER=http://0.0.0.0:4000 # FQDN or IP
-DATABASE_URL="mongodb://username:password@localhost:27017/database-name?retryWrites=true&w=majority&authSource=admin" # Mongo DB at replica set mode
-ENCRYPTION_KEY="YOUR_SUPER_SECRET_KEY_FOR_ENCRYPTED_SETTINGS" # for saving and reading encrypt settings in DB
+## Environment variables in docker-compose.yml:
+### necessary:
+```yml
+SERVER: http://0.0.0.0:4000 # FQDN or IP
+DATABASE_URL: "mongodb://username:password@localhost:27017/database-name?retryWrites=true&w=majority&authSource=admin" # Mongo DB at replica set mode
+ENCRYPTION_KEY: "YOUR_SUPER_SECRET_KEY_FOR_ENCRYPTED_SETTINGS" # for saving and reading encrypt settings in DB
 ```
+### optional:
+```yml
+LOG_LEVEL: debug
+```
+log levels: 
+* error: 0,
+* warn: 1,
+* info: 2,
+* http: 3,
+* verbose: 4,
+* debug: 5,
+* silly: 6
 
-### Additional for Proxmox
+### Additional information for Proxmox
 If you want to use proxmox you must pass through your devices to the LXC container.
 Example of an LXC container in the [example folder](https://github.com/NlightN22/frigate-proxy/tree/master/example).
 More information can be read in the [frigate discussion](https://github.com/blakeblackshear/frigate/discussions/5773).

@@ -24,6 +24,7 @@ export const allowedNotAdminRoutes = [
 
 export const allowedNotUserRoutes = [
   /^api\/events\/[^\/]+\/clip\.mp4$/,
+  /^api\/config\/schema\.json$/,
 ]
 
 export const getRequestPath = (request: FastifyRequest) => {

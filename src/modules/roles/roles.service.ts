@@ -14,7 +14,7 @@ class RolesService {
 
     constructor() {
         this.updateRoles(60000)
-        logger.debug(`ConfigService initialized`)
+        logger.debug(`RolesService initialized`)
     }
 
     async getAllRoles() {
@@ -84,12 +84,11 @@ class RolesService {
             const startTime = Date.now()
             try {
                 if (OIDPService.authState === OIDPAuthState.Completed) {
-                    logger.debug('Start updateRoles')
+                    logger.debug('RolesService start updateRoles')
                     const data = await this.oidpService.fetchRoles()
-                    // logger.debug(JSON.stringify(data))
                     if (data) {
                         const roles: RoleCoreSchema[] = data.map(({ id, name }) => ({ id, name }))
-                        if (!roles || roles.length < 1) throw new Error('Cannot get roles from OIDP')
+                        if (!roles || roles.length < 1) throw new Error('RolesService cannot get roles from OIDP')
                         else {
                             await this.saveRolesToDb(roles)
                             const missingRoles = await this.findNonExistRolesInDb(roles)
@@ -100,7 +99,7 @@ class RolesService {
             } catch (e) {
                 logger.error(`RolesService ${e.message}`)
             } finally {
-                logger.debug(`Finish updateRoles at ${(Date.now() - startTime) / 1000} sec`)
+                logger.debug(`RolesService finish updateRoles at ${(Date.now() - startTime) / 1000} sec`)
             }
             await sleep(updatePeriod)
         }
@@ -117,7 +116,7 @@ class RolesService {
 
     private async saveRolesToDb(roles: RoleCoreSchema[]) {
         await Promise.all(roles.map(role => this.upsertRole(role)))
-        logger.debug(`Updated roles: ${roles.length}`)
+        logger.debug(`RolesService updated roles: ${roles.length}`)
     }
 
     private async findNonExistRolesInDb(inputRoles: RoleCoreSchema[]) {
@@ -138,7 +137,7 @@ class RolesService {
             }
         })
         await this.cameraService.deleteRoles(camerasIds, roleIds)
-        logger.debug(`Deleted roles: ${roleIds.length}`)
+        logger.debug(`RolesService deleted roles: ${roleIds.length}`)
     }
 
     private getUniqueCamerasIds(dbRoles: MissingRolesSchema) {

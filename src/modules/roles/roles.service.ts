@@ -66,7 +66,6 @@ class RolesService {
     }
 
     async deleteCameras(roleId: string, inputCamerasID: string[]) {
-        if (inputCamerasID.length < 1) throw new ErrorApp('validate', 'Nothing to delete')
         const { cameraIDs } = await this.prismaClient.findUniqueOrThrow({ where: { id: roleId } })
         const updatedIds = cameraIDs.filter(id => !inputCamerasID.some(inputId => id === inputId))
         await this.cameraService.deleteRoles(inputCamerasID, [roleId])

@@ -3,6 +3,9 @@ version: '3.1'
 services:
   front:
     image: oncharterliz/multi-frigate:latest
+    volumes:
+      - /etc/timezone:/etc/timezone:ro # for Unix TZ
+      - /etc/localtime:/etc/localtime:ro # for Unix Time    
     environment:
       FRIGATE_PROXY: http://localhost:4000
       OPENID_SERVER: https://server:port/realms/your-realm
@@ -15,6 +18,9 @@ services:
   backend:
     image: oncharterliz/frigate-proxy:latest
     restart: unless-stopped
+    volumes:
+      - /etc/timezone:/etc/timezone:ro # for Unix TZ
+      - /etc/localtime:/etc/localtime:ro # for Unix Time
     environment:
       SERVER: http://0.0.0.0:4000
       DATABASE_URL: "mongodb://db-username:db-password@mongo:27017/db-name?retryWrites=true&w=majority&authSource=admin"

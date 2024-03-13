@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify"
-import { withErrorHandler } from "../hooks/error.handler"
+import { ErrorApp, withErrorHandler } from "../hooks/error.handler"
 import RolesService from "./roles.service"
 import { AddRoleCamerasSchema, DeleteRoleCamerasSchema, addRoleCamerasSchema, deleteRoleCamerasSchema } from "./roles.schema"
 import { z } from "zod"
@@ -33,6 +33,7 @@ class RolesController {
     }>, rep: FastifyReply) => {
         const { id } = req.params
         const { cameraIDs } = deleteRoleCamerasSchema.parse(req.body)
+        if (cameraIDs.length < 1) throw new ErrorApp('validate', 'Nothing to delete')
         rep.send(await this.rolesService.deleteCameras(id, cameraIDs))
     })
 }

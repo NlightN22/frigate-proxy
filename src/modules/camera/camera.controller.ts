@@ -45,7 +45,17 @@ class CameraController {
         Params: { id: string }
     }>, rep: FastifyReply) => {
         const { id } = req.params
-        const frigateHost = await this.cameraService.getCamera(id)
+        const parsedId = z.string().parse(id)
+        const frigateHost = await this.cameraService.getCamera(parsedId)
+        rep.send(frigateHost)
+    })
+
+    getCameraStateHandler = withErrorHandler(async (req: FastifyRequest<{
+        Params: { id: string }
+    }>, rep: FastifyReply) => {
+        const { id } = req.params
+        const parsedId = z.string().parse(id)
+        const frigateHost = await this.cameraService.getCamerState(parsedId)
         rep.send(frigateHost)
     })
 
@@ -53,8 +63,8 @@ class CameraController {
         Params: { id: string }
     }>, rep: FastifyReply) => {
         const { id } = req.params
-        if (!id) throw Error('deleteCameraHandler need camera id')
-        rep.send(await this.cameraService.deleteCamera(id))
+        const parsedId = z.string().parse(id)
+        rep.send(await this.cameraService.deleteCamera(parsedId))
     })
 }
 export default CameraController

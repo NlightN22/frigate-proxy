@@ -6,6 +6,11 @@ import https from 'https'
 import { ProxyParamsSchema, proxyParams } from "./proxy.schema";
 import ConfigService from "../config/config.service";
 
+export const allowedNotUserRoutes = [
+  /^api\/events\/[^\/]+\/clip\.mp4$/,
+  /^api\/config\/schema\.json$/,
+]
+
 export const allowedNotAdminRoutes = [
   /^vod\/.+?\/[^\/]+\.m3u8$/,
   /^vod\/.+?\/[^\/]+\.ts$/,
@@ -16,15 +21,10 @@ export const allowedNotAdminRoutes = [
   /^exports\/$/,
   /^api\/events$/,
   /^api\/events\/[^\/]+\/thumbnail\.jpg$/,
-  /^api\/events\/[^\/]+\/clip\.mp4$/,
   /^api\/[^\/]+\/events\/summary$/,
   /^api\/[^\/]+\/recordings\/.*$/,
   /^api\/[^\/]+\/latest\.jpg$/,
-]
-
-export const allowedNotUserRoutes = [
-  /^api\/events\/[^\/]+\/clip\.mp4$/,
-  /^api\/config\/schema\.json$/,
+  ...allowedNotUserRoutes,
 ]
 
 export const getRequestPath = (request: FastifyRequest) => {

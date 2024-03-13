@@ -107,6 +107,17 @@ class CameraService {
         })
     }
 
+    async getCamerState(id: string) {
+        return await this.prismaClient.findUniqueOrThrow({
+            where: {
+                id: id
+            },
+            select: {
+                state: true
+            }
+        })
+    }
+
     async getCameraByName(name: string) {
         return await this.prismaClient.findFirst({
             where: {

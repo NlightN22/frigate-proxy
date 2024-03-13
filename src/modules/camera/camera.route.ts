@@ -45,6 +45,15 @@ export async function cameraRoutes (server: FastifyInstance) {
             }
         }
     }, controller.getCameraHandler)
+
+    server.get('/:id/state', {
+        schema:{
+            params: getByCameraIdSchema,
+            response: {
+                200: $ref("responseCameraStateSchema")
+            }
+        }
+    }, controller.getCameraHandler)
     
     server.put('/', {
         schema:{

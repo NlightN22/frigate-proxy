@@ -38,6 +38,10 @@ export const responseCameraSchema = responseCameraCoreSchema.merge(z.object({
     roles: responseRoleSchema.array().optional(),
 }))
 
+export const responseCameraStateSchema = z.object({
+    state: z.boolean().nullable().optional()
+})
+
 export const responseCamerasSchema = responseCameraSchema.array()
 
 /**
@@ -67,6 +71,7 @@ export type UpdateCameraSchema = z.infer<typeof updateCameraSchema>
 export const { schemas: cameraSchemas, $ref } = buildJsonSchemas({
     createCameraSchema,
     responseCameraSchema,
+    responseCameraStateSchema,
     responseCamerasSchema,
     updateCameraSchema,
 },

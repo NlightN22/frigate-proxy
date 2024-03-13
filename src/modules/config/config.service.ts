@@ -15,7 +15,7 @@ import { OIDPUrls } from "../oidp/oidp.urls";
 export interface Setting {
     description: string,
     encrypted: boolean,
-    validateFn?: (value: any) => void
+    validateFn?: (value: any) => boolean | Promise<boolean>
 }
 
 export type MapSettings = [string, Setting][]
@@ -39,6 +39,9 @@ class ConfigService {
         const allMapSettings: Map<string, Setting> = this.getMapSettings()
         const setting = allMapSettings.get(key)
         if (!setting) throw new ErrorApp('validate', `ConfigService. Settings with ${key}, does not exist`)
+        if (setting.validateFn) {
+            if (!setting.validateFn(value)) throw new ErrorApp('validate', `ConfigService. Settings with ${key}, not validated`)
+        }
         // check equals at prisma
         const settingDB = await this.prismaClient.findUnique({
             where: { key: key }

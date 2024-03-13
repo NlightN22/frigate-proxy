@@ -1,16 +1,15 @@
 import { createCipheriv, createDecipheriv, randomBytes, scrypt } from "crypto";
 import { promisify } from "util";
-import { encryptionKey } from "../../consts";
-import { AppSetting, appSettingsKeys } from "./app.settings";
-import prisma from "../../utils/prisma";
-import { PutConfigSchema, PutConfigsSchema, ResponseConfigsSchema } from "./config.shema";
-import { oIDPSettings, oidpSettingsKeys } from "./oidp.settings";
-import { logger } from "../../utils/logger";
-import { ErrorApp } from "../hooks/error.handler";
-import { allSettings } from "./all.settings";
-import { OIDPConfig } from "../oidp/oidp.service";
 import { z } from "zod";
-import { OIDPUrls } from "../oidp/oidp.urls";
+import { encryptionKey } from "../../consts";
+import { logger } from "../../utils/logger";
+import prisma from "../../utils/prisma";
+import { ErrorApp } from "../hooks/error.handler";
+import { OIDPConfig } from "../oidp/oidp.service";
+import { allSettings } from "./all.settings";
+import { appSettingsKeys } from "./app.settings";
+import { PutConfigsSchema, ResponseConfigsSchema } from "./config.shema";
+import { oidpSettingsKeys } from "./oidp.settings";
 
 export interface Setting {
     description: string,
@@ -40,7 +39,8 @@ class ConfigService {
         const setting = allMapSettings.get(key)
         if (!setting) throw new ErrorApp('validate', `ConfigService. Settings with ${key}, does not exist`)
         if (setting.validateFn) {
-            if (!setting.validateFn(value)) throw new ErrorApp('validate', `ConfigService. Settings with ${key}, not validated`)
+            const result = await setting.validateFn(value)
+            if (!result) throw new ErrorApp('validate', `ConfigService. Settings with ${key}, not validated`)
         }
         // check equals at prisma
         const settingDB = await this.prismaClient.findUnique({

@@ -1,7 +1,5 @@
 import { z } from "zod";
 import { MapSettings } from "./config.service";
-import { testJwksClientInitialization } from "../hooks/jwks-rsa.prehandler";
-
 
 export const oidpSettingsKeys = {
     clientId: 'oidpClientId',
@@ -47,6 +45,7 @@ export const oIDPSettings: MapSettings = [
             description: 'OIDP realm URL path',
             encrypted: false,
             validateFn: async (value) => {
+                const { testJwksClientInitialization } = await import("../hooks/jwks-rsa.prehandler")
                 const parsedURL = z.string().url().parse(value)
                 return await testJwksClientInitialization(parsedURL)
             },

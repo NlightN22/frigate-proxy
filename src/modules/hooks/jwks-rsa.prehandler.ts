@@ -6,6 +6,7 @@ import ConfigService from "../config/config.service"
 import { OIDPUrls } from "../oidp/oidp.urls"
 import { ErrorApp } from "./error.handler"
 import { TokenUser } from "./token.shchema"
+import { z } from "zod"
 
 const configService = ConfigService.getInstance()
 
@@ -55,14 +56,16 @@ function getKey(header, callback) {
     })
 }
 
-export async function testJwksClientInitialization(newUrl) {
+export async function testJwksClientInitialization(newUrl: string) {
+    const parsedZod = z.string().url().parse(newUrl)
+    const urlWithSlash = parsedZod.endsWith('/') ? parsedZod : parsedZod + '/'
     try {
         const testClient = jwksRsa({
-            jwksUri: `${newUrl}${OIDPUrls.certs}`
+            jwksUri: `${urlWithSlash}${OIDPUrls.certs}`
         })
         const keys = await testClient.getSigningKeys()
         if (!keys || keys.length === 0) {
-            throw new Error('No signing keys found')
+            throw new Error(`No signing keys found for: ${urlWithSlash}`)
         }
         logger.info('validateJwt New JWKS client URL is valid and accessible.')
         return true

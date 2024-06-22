@@ -2,16 +2,7 @@ import { buildJsonSchemas } from "fastify-zod";
 import { z } from "zod";
 import { responseHostSchema } from "../frigate-hosts/frigate-hosts.schema";
 import { responseRoleSchema } from "../roles/roles.schema";
-
-export const responseCameraCoreSchema = z.object({
-    id: z.string(),
-    createAt: z.date(),
-    updateAt: z.date(),
-    name: z.string(),
-    url: z.string().url().optional(),
-    state: z.boolean().nullable(),
-    config: z.record(z.any()).nullable().optional(),
-})
+import { responseCameraCoreSchema, responseCameraStateSchema } from "./camera.core.schema";
 
 export const getByHostIdSchema = {
     type: 'object',
@@ -33,14 +24,11 @@ export const getByCameraIdSchema = {
     }
 }
 
+
 export const responseCameraSchema = responseCameraCoreSchema.merge(z.object({
     frigateHost: responseHostSchema.optional(),
     roles: responseRoleSchema.array().optional(),
 }))
-
-export const responseCameraStateSchema = z.object({
-    state: z.boolean().nullable().optional()
-})
 
 export const responseCamerasSchema = responseCameraSchema.array()
 

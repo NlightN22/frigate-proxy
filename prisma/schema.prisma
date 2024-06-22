@@ -31,7 +31,7 @@ model FrigateHost {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
-  name     String
+  name     String   @unique
   host     String   @unique
   enabled  Boolean? @default(true)
   cameras  Camera[]

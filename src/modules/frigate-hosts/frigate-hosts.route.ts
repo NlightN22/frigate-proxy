@@ -1,21 +1,37 @@
 import { FastifyInstance } from "fastify";
-import { $ref, getHostStatusByIdSchema, getHostWithIncludeSchema, responseHostStatusSchema } from "./frigate-hosts.schema";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { validateRole } from "../hooks/roles.prehandler";
 import FrigateHostController from "./frigate-hosts.controller";
+import { $ref, getHostByHostSchema, getHostByIdSchema, getHostByNameSchema } from "./frigate-hosts.schema";
 
 export async function frigateHostsRoutes(server: FastifyInstance) {
 
     const controller = new FrigateHostController()
 
-    server.decorateRequest('user')
-    server.addHook('preValidation', async (request, reply) => {
-        await validateJwt(request, reply);
-    })
+    // Routes for unauthenticated users
+    server.get('/:id/cameras', {
+        schema: {
+            params: getHostByIdSchema,
+            response: {
+                200: $ref("responseHostAndCamerasSchema")
+            }
+        }
+    }, controller.getHostHandler)
 
-    // const allowedRoles = ['user',]
-    // await validateRole(request, reply, allowedRoles);
+    server.get('/by-name/:name/cameras', {
+        schema: {
+            params: getHostByNameSchema,
+            response: {
+                200: $ref("responseHostAndCamerasSchema")
+            }
+        }
+    }, controller.getHostByNameHandler)
+
+    // Routes for authenticated users
+
+    server.decorateRequest('user')
     server.get('/', {
+        preValidation: [validateJwt],
         schema: {
             response: {
                 200: $ref("responseHostsSchema")
@@ -24,8 +40,9 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
     }, controller.getHostsHandler)
 
     server.get('/:id', {
+        preValidation: [validateJwt],
         schema: {
-            params: getHostStatusByIdSchema,
+            params: getHostByIdSchema,
             response: {
                 200: $ref("responseHostSchema")
             }
@@ -33,8 +50,9 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
     }, controller.getHostHandler)
 
     server.get('/:id/status', {
+        preValidation: [validateJwt],
         schema: {
-            params: getHostStatusByIdSchema,
+            params: getHostByIdSchema,
             response: {
                 200: $ref('responseHostStatusSchema')
             },
@@ -42,56 +60,59 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
     }, controller.getHostStatusHandler)
 
     server.put('/', {
+        preValidation: async (request, reply) => {
+            await validateJwt(request, reply)
+            const allowedRoles = ['admin',]
+            await validateRole(request, reply, allowedRoles);
+        },
         schema: {
             body: $ref('updateHostsSchema'),
             response: {
                 201: $ref("responseHostsSchema")
             }
         },
-        preValidation: async (request, reply) => {
-            const allowedRoles = ['admin',]
-            await validateRole(request, reply, allowedRoles);
-        }
     }, controller.putHostsHandler)
 
     server.put('/:id', {
+        preValidation: async (request, reply) => {
+            await validateJwt(request, reply)
+            const allowedRoles = ['admin',]
+            await validateRole(request, reply, allowedRoles);
+        },
         schema: {
-            params: getHostStatusByIdSchema,
+            params: getHostByIdSchema,
             body: $ref('updateHostSchema'),
             response: {
                 201: $ref("responseHostSchema")
             }
         },
-        preValidation: async (request, reply) => {
-            const allowedRoles = ['admin',]
-            await validateRole(request, reply, allowedRoles);
-        }
     }, controller.putHostHandler)
 
     server.delete('/:id', {
+        preValidation: async (request, reply) => {
+            await validateJwt(request, reply)
+            const allowedRoles = ['admin',]
+            await validateRole(request, reply, allowedRoles);
+        },
         schema: {
-            params: getHostStatusByIdSchema,
+            params: getHostByIdSchema,
             response: {
                 200: $ref("responseHostSchema")
             }
         },
-        preValidation: async (request, reply) => {
-            const allowedRoles = ['admin',]
-            await validateRole(request, reply, allowedRoles);
-        }
     }, controller.deleteHostHandler)
 
     server.delete('/', {
+        preValidation: async (request, reply) => {
+            await validateJwt(request, reply)
+            const allowedRoles = ['admin',]
+            await validateRole(request, reply, allowedRoles);
+        },
         schema: {
             body: $ref('deleteHostsSchema'),
             // response: {
             //     200: $ref("responseHostsSchema")
             // }
         },
-        preValidation: async (request, reply) => {
-            const allowedRoles = ['admin',]
-            await validateRole(request, reply, allowedRoles);
-        }
     }, controller.deleteHostsHandler)
-
 }

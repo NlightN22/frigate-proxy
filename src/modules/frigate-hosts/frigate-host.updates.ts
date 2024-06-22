@@ -145,11 +145,10 @@ class FrigateHostUpdates {
     private parseCamerasStats(input: any): CameraStats[] {
         let camerasStates: CameraStats[] = []
         if (!input.cameras) {
-            logger.error('parseCamerasStats Input data does not have cameras')
+            logger.warn('parseCamerasStats Input data does not have cameras')
             return []
         }
         objForEach(input.cameras, (name: string, value) => {
-            logger.debug(name)
             if (value.hasOwnProperty('camera_fps')) {
                 const state = value.camera_fps !== 0
                 const item = { name: name, state }

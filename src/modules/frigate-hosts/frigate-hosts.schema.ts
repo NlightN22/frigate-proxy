@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { responseCameraCoreSchema } from "../camera/camera.schema";
 import { buildJsonSchemas } from "fastify-zod";
+import { responseCameraStateSchema } from "../camera/camera.core.schema";
 
 export const hostCoreSchema = {
     name: z.string(),
@@ -15,12 +15,32 @@ export const hostCoreSchema = {
 }
 
 
-export const getHostStatusByIdSchema = {
+export const getHostByIdSchema = {
     type: 'object',
     properties: {
         id: {
             type: 'string',
             description: 'Host ID',
+        },
+    }
+}
+
+export const getHostByNameSchema = {
+    type: 'object',
+    properties: {
+        name: {
+            type: 'string',
+            description: 'Name',
+        },
+    }
+}
+
+export const getHostByHostSchema = {
+    type: 'object',
+    properties: {
+        name: {
+            type: 'string',
+            description: 'Hostname',
         },
     }
 }
@@ -39,8 +59,14 @@ export const responseHostStatusSchema = z.object({
     id: z.string(),
     ...hostCoreSchema,
     status: z.boolean(),
-
 })
+
+export const responseHostAndCamerasSchema = z.object({
+    id: z.string(),
+    ...hostCoreSchema,
+}).merge(z.object({
+    cameras: z.array(responseCameraStateSchema)
+}))
 
 export const createHostSchema = z.object({
     ...hostCoreSchema,
@@ -98,6 +124,7 @@ export const { schemas: frigateHostSchemas, $ref } = buildJsonSchemas({
     responseHostSchema,
     responseHostsSchema,
     responseHostStatusSchema,
+    responseHostAndCamerasSchema,
     deleteHostSchema,
     deleteHostsSchema,
 },

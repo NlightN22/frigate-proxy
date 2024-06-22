@@ -19,7 +19,6 @@ class FrigateHostController {
         Params: { id: string }
         Body: schemas.UpdateHostSchema
     }>, rep: FastifyReply) => {
-        const id = z.string().parse(req.params)
         const data = schemas.updateHostSchema.parse(req.body)
         const frigateHost = await this.frigateHostsService.upsertFrigateHost(data)
         rep.code(201).send(frigateHost)
@@ -46,6 +45,15 @@ class FrigateHostController {
     }>, rep: FastifyReply) => {
         const { id } = req.params
         const frigateHost = await this.frigateHostsService.getFrigateHostById(id)
+        rep.send(frigateHost)
+    })
+
+    getHostByNameHandler = withErrorHandler(async (req: FastifyRequest<{
+        Params: { name: string }
+    }>, rep: FastifyReply) => {
+        const { name } = req.params
+        const pasredName = z.string().parse(name)
+        const frigateHost = await this.frigateHostsService.getFrigateHostByName(pasredName)
         rep.send(frigateHost)
     })
 

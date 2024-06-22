@@ -6,12 +6,20 @@ import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 export async function cameraRoutes (server: FastifyInstance) {
     const controller = new CameraController()
 
-    server.decorateRequest('user')
-    server.addHook('preValidation', async (request, reply) => {
-        await validateJwt(request, reply);
-    })
+    // Routes for unauthenticated users
+    server.get('/:id/state', {
+        schema:{
+            params: getByCameraIdSchema,
+            response: {
+                200: $ref("responseCameraStateSchema")
+            }
+        }
+    }, controller.getCameraHandler)
 
+    // Routes for authenticated users
+    server.decorateRequest('user')
     server.post('/', {
+        preValidation: [validateJwt],
         schema:{
             body: $ref('createCameraSchema'),
             response: {
@@ -21,6 +29,7 @@ export async function cameraRoutes (server: FastifyInstance) {
     }, controller.createCameraHandler)
 
     server.get('/', {
+        preValidation: [validateJwt],
         schema:{
             response: {
                 200: $ref("responseCamerasSchema")
@@ -29,6 +38,7 @@ export async function cameraRoutes (server: FastifyInstance) {
     }, controller.getCamerasHandler)
 
     server.get('/host/:id', {
+        preValidation: [validateJwt],
         schema:{
             params: getByHostIdSchema,
             response: {
@@ -38,6 +48,7 @@ export async function cameraRoutes (server: FastifyInstance) {
     }, controller.getCamerasByHostHandler)
 
     server.get('/:id', {
+        preValidation: [validateJwt],
         schema:{
             params: getByCameraIdSchema,
             response: {
@@ -46,16 +57,8 @@ export async function cameraRoutes (server: FastifyInstance) {
         }
     }, controller.getCameraHandler)
 
-    server.get('/:id/state', {
-        schema:{
-            params: getByCameraIdSchema,
-            response: {
-                200: $ref("responseCameraStateSchema")
-            }
-        }
-    }, controller.getCameraHandler)
-    
     server.put('/', {
+        preValidation: [validateJwt],
         schema:{
             body: $ref('updateCameraSchema'),
             response: {
@@ -65,6 +68,7 @@ export async function cameraRoutes (server: FastifyInstance) {
     }, controller.putCameraHandler)
     
     server.delete('/:id', {
+        preValidation: [validateJwt],
         schema:{
             params: getByCameraIdSchema,
             response: {

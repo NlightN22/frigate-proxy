@@ -78,7 +78,7 @@ class FrigateHostsService {
     async getFrigateHostByHost(host: string) {
         return await this.prismaClient.findUniqueOrThrow({
             where: {
-                host: host
+                host
             },
             include: {
                 cameras: true
@@ -86,6 +86,27 @@ class FrigateHostsService {
         })
     }
 
+    async getFrigateHostByName(name: string) {
+        return await this.prismaClient.findUniqueOrThrow({
+            where: {
+                name
+            },
+            include: {
+                cameras: true
+            }
+        })
+    }
+
+    async getFrigateHostById(id: string) {
+        return await this.prismaClient.findUniqueOrThrow({
+            where: {
+                id: id
+            },
+            include: {
+                cameras: true
+            }
+        })
+    }
 
     async getFrigateHostOrNull(id: string) {
         return await this.prismaClient.findUnique({
@@ -144,16 +165,7 @@ class FrigateHostsService {
         }
     }
 
-    async getFrigateHostById(id: string) {
-        return await this.prismaClient.findUniqueOrThrow({
-            where: {
-                id: id
-            },
-            include: {
-                cameras: true
-            }
-        })
-    }
+
 }
 
 export default FrigateHostsService

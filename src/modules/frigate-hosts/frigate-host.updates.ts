@@ -99,13 +99,11 @@ class FrigateHostUpdates {
                                 if (parsedStats && parsedStats.length > 0) {
                                     const hostCameras = (await this._frigateHostsService.getFrigateHostById(host.id)).cameras
                                     const statsMap = new Map(parsedStats.map(stat => [stat.name, stat.state]));
-                                    // logger.silly(`hostCameras before: ${JSON.stringify(hostCameras.slice(0,2).map(cam=>({name: cam.name, state: cam.state})))}`)
                                     hostCameras.forEach(camera => {
                                         if (statsMap.has(camera.name)) {
                                             camera.state = statsMap.get(camera.name) ?? null;
                                         }
                                     })
-                                    // logger.debug(`hostCameras after: ${JSON.stringify(hostCameras.slice(0,2).map(cam=>({name: cam.name, state: cam.state})))}`)
                                     await this.updateHostCamerasState(host.id, hostCameras)
                                     logger.silly(`FrigateHostUpdates Updated from ${host.name} cameras state: ${JSON.stringify(hostCameras.flatMap(cam => cam.name))}`)
                                     logger.debug(`FrigateHostUpdates Updated from ${host.name} ${hostCameras.length} cameras states`)
@@ -144,12 +142,17 @@ class FrigateHostUpdates {
         }))
     }
 
-    private parseCamerasStats(stats: any) {
+    private parseCamerasStats(input: any): CameraStats[] {
         let camerasStates: CameraStats[] = []
-        objForEach(stats, (name: string, value) => {
+        if (!input.cameras) {
+            logger.error('parseCamerasStats Input data does not have cameras')
+            return []
+        }
+        objForEach(input.cameras, (name: string, value) => {
+            logger.debug(name)
             if (value.hasOwnProperty('camera_fps')) {
-                const isWork = value.camera_fps !== 0
-                const item = { name: name, state: isWork }
+                const state = value.camera_fps !== 0
+                const item = { name: name, state }
                 camerasStates.push(item)
             }
         })

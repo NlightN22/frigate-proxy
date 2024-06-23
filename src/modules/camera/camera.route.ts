@@ -2,9 +2,13 @@ import { FastifyInstance } from "fastify";
 import { $ref, getByCameraIdSchema, getByHostIdSchema } from "./camera.schema";
 import CameraController from "./camera.controller";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
+import { logRequest, logResponse } from "../hooks/log.hooks";
 
 export async function cameraRoutes (server: FastifyInstance) {
     const controller = new CameraController()
+
+    server.addHook('onRequest', logRequest);
+    server.addHook('onResponse', logResponse);
 
     // Routes for unauthenticated users
     server.get('/:id/state', {

@@ -3,8 +3,12 @@ import { getConfigsController, getConfigController, putConfigController, putConf
 import { $ref, paramConfigSchema } from "./config.shema";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { validateRole } from "../hooks/roles.prehandler";
+import { logRequest, logResponse } from "../hooks/log.hooks";
 
 export async function configRoutes(server: FastifyInstance) {
+
+    server.addHook('onRequest', logRequest);
+    server.addHook('onResponse', logResponse);
 
     server.get('/admin', {
         schema: {

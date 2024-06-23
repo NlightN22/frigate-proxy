@@ -1,14 +1,13 @@
-import axios, { AxiosError, AxiosResponse } from "axios"
-import { logger } from "../../utils/logger"
-import { OIDPUrls } from "./oidp.urls"
-import { OIDPRole, AuthUser, UserByRole } from "./oidp.schema"
-import { UUID, randomUUID } from "crypto"
-import prisma from "../../utils/prisma"
+import axios, { AxiosError } from "axios"
+import { UUID } from "crypto"
 import { JwtPayload, jwtDecode } from "jwt-decode"
+import { logger } from "../../utils/logger"
+import prisma from "../../utils/prisma"
 import { sleep } from "../../utils/sleep"
-import { ErrorApp } from "../hooks/error.handler"
-import { oidpSettingsKeys } from "../config/oidp.settings"
 import ConfigService from "../config/config.service"
+import { ErrorApp } from "../hooks/error.handler"
+import { AuthUser, OIDPRole, UserByRole } from "./oidp.schema"
+import { OIDPUrls } from "./oidp.urls"
 
 type Authenticate = {
     access_token: string

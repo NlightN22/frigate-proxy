@@ -58,7 +58,6 @@ export async function httpProxyService(request: FastifyRequest<{
     const isAllowedRoute = allowedNotAdminRoutes.some(pattern => pattern.test(requestPath))
     logger.silly(`httpProxyService query request allowed role: ${isAllowedRoute}`)
     if (!isAllowedRoute && !(request.user?.roles.some(role => role === adminRole.value))) {
-      logger.debug(`httpProxyService query request params: ${JSON.stringify(requestParams)}`)
       logger.error(`httpProxyService Not allowed route and not admin:${adminRole.value} at user roles:${JSON.stringify(request.user?.roles)}`)
       return reply.code(403).send({ error: 'Not allowed role and allowed route to proxy' })
     }
@@ -117,7 +116,7 @@ export async function httpProxyService(request: FastifyRequest<{
       reply.raw.writeHead(res.statusCode || 500, headersWithCors);
 
       res.pipe(reply.raw);
-      logger.debug(`httpProxyService Proxy request to ${hostName} at ${path} is finished with code ${res.statusCode}`)
+      logger.silly(`httpProxyService Proxy request to ${hostName} at ${path} is finished with code ${res.statusCode}`)
       logger.silly(`httpProxyService Proxy reply headers ${JSON.stringify(res.headers)}`)
       resolve()
     });
@@ -134,7 +133,7 @@ export async function httpProxyService(request: FastifyRequest<{
     }
 
     proxyRequest.on('error', (error) => {
-      logger.debug(`httpProxyService Proxy request to ${hostName} at ${path} is finished with error`)
+      logger.silly(`httpProxyService Proxy request to ${hostName} at ${path} is finished with error`)
       reply.send(error);
       reject(error)
     });

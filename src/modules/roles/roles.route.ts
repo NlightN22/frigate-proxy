@@ -3,9 +3,13 @@ import { $ref, getRoleByIdSchema } from "./roles.schema"
 import RolesController from "./roles.controller"
 import { validateJwt } from "../hooks/jwks-rsa.prehandler"
 import { validateRole } from "../hooks/roles.prehandler"
+import { logRequest, logResponse } from "../hooks/log.hooks"
 
 export async function rolesRoutes(server: FastifyInstance) {
     const controller = new RolesController()
+
+    server.addHook('onRequest', logRequest);
+    server.addHook('onResponse', logResponse);
 
     server.decorateRequest('user')
     server.addHook('preValidation', async (request, reply) => {

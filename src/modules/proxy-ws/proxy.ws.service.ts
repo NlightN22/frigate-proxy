@@ -3,6 +3,7 @@ import { SocketStream } from '@fastify/websocket';
 import { logger } from "../../utils/logger";
 import WebSocket from 'ws';
 import { ProxyWsParamsSchema, proxyWsParams } from "./proxy.ws.schema";
+import { logRequest } from "../hooks/log.hooks";
 
 
 type Connections = {
@@ -31,15 +32,15 @@ export async function proxyWsService(connection: SocketStream, req: FastifyReque
         if (!hostName) close(connections, 1011, 'Need hostname at params')
         const requestParams = params as any
 
-        logger.debug(`body: ${JSON.stringify(body)}`)
-        logger.debug(`query: ${JSON.stringify(query)}`)
-        logger.debug(`params: ${JSON.stringify(params)}`)
-        logger.debug(`hostName: ${JSON.stringify(hostName)}`)
-        logger.debug(`url: ${JSON.stringify(url)}`)
+        logger.silly(`body: ${JSON.stringify(body)}`)
+        logger.silly(`query: ${JSON.stringify(query)}`)
+        logger.silly(`params: ${JSON.stringify(params)}`)
+        logger.silly(`hostName: ${JSON.stringify(hostName)}`)
+        logger.silly(`url: ${JSON.stringify(url)}`)
 
 
         const targetUrl = `ws://${hostName}/${requestParams['*']}`
-        logger.debug(`targetUrl: ${JSON.stringify(targetUrl)}`)
+        logger.silly(`targetUrl: ${JSON.stringify(targetUrl)}`)
 
         const target = new WebSocket(`${targetUrl}`);
         connections.target = target

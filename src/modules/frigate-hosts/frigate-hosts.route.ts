@@ -1,12 +1,16 @@
 import { FastifyInstance } from "fastify";
+import { logRequest, logResponse } from "../hooks/log.hooks";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { validateRole } from "../hooks/roles.prehandler";
 import FrigateHostController from "./frigate-hosts.controller";
-import { $ref, getHostByHostSchema, getHostByIdSchema, getHostByNameSchema } from "./frigate-hosts.schema";
+import { $ref, getHostByIdSchema, getHostByNameSchema } from "./frigate-hosts.schema";
 
 export async function frigateHostsRoutes(server: FastifyInstance) {
 
     const controller = new FrigateHostController()
+
+    server.addHook('onRequest', logRequest);
+    server.addHook('onResponse', logResponse);
 
     // Routes for unauthenticated users
     server.get('/:id/cameras', {

@@ -1,15 +1,14 @@
 import axios, { AxiosError } from "axios"
 import { UUID } from "crypto"
 import { JwtPayload, jwtDecode } from "jwt-decode"
+import { z } from "zod"
 import { logger } from "../../utils/logger"
 import prisma from "../../utils/prisma"
 import { sleep } from "../../utils/sleep"
-import ConfigService from "../config/config.service"
-import { ErrorApp } from "../hooks/error.handler"
-import { AuthUser, OIDPConfigService, OIDPRole, UserByRole } from "./oidp.schema"
-import { OIDPUrls } from "./oidp.urls"
-import { z } from "zod"
 import ConfigOIDPService from "../config/oidp/config.oidp.service"
+import { ErrorApp } from "../hooks/error.handler"
+import { AuthUser, OIDPRole, RequestAccessTokenByPasswordSchema, RequestAccessTokenByRefreshSchema, UserByRole } from "./oidp.schema"
+import { OIDPUrls } from "./oidp.urls"
 
 type Authenticate = {
     access_token: string
@@ -27,7 +26,7 @@ export enum OIDPAuthState {
 
 class OIDPService {
     private static instance: OIDPService
-    configOIDPService = new ConfigOIDPService()
+    private configOIDPService = ConfigOIDPService.getInstance()
     id: UUID
     private static _authenticate: Authenticate | null
     private static _authState: OIDPAuthState = OIDPAuthState.NotStarted
@@ -67,10 +66,6 @@ class OIDPService {
         return data
     }
 
-    async refreshToken(): Promise<void> {
-        await this.fetchAccessToken();
-    }
-
     private async init() {
         try {
             const authDb = await this.getTokenAtDb()
@@ -101,41 +96,20 @@ class OIDPService {
         let data: Authenticate | undefined
         while (!data) {
             const refreshToken = OIDPService._authenticate?.refresh_token
-            if (refreshToken && this.verifyJWT(refreshToken)) data = await this.fetchAccessToken(refreshToken)
-            else data = await this.fetchAccessToken()
-            if (!data) logger.debug('OIDPService not get access token from service')
+            if (refreshToken && this.verifyJWT(refreshToken)) data = await this.jobFetchAccessToken(refreshToken)
+            else data = await this.jobFetchAccessToken()
+            if (!data) logger.debug('OIDPService not get authentificate data')
             await sleep(30 * 1000) // wait 30 seconds
         }
         return data
     }
 
-    private async setNewAuthenticateData(data: Authenticate) {
+    async setNewAuthenticateData(data: Authenticate) {
         OIDPService._authenticate = data
         this.saveTokenToDb(data)
         this.setRefreshTokenTimeout()
         OIDPService._authState = OIDPAuthState.Completed
         logger.debug('OIDPService set access token')
-    }
-
-    private setRequestBody(refreshToken: string | undefined = undefined, requestConfig: OIDPConfigService) {
-        let request
-        if (refreshToken) {
-            request = {
-                client_id: requestConfig.clientId,
-                refresh_token: refreshToken,
-                grant_type: 'refresh_token',
-                client_secret: requestConfig.clientSecret,
-            }
-        } else {
-            request = {
-                client_id: requestConfig.clientId,
-                username: requestConfig.clientUsername,
-                password: requestConfig.clientPassword,
-                grant_type: 'password',
-                client_secret: requestConfig.clientSecret,
-            }
-        }
-        return new URLSearchParams(request).toString()
     }
 
     private async getRequestConfig() {
@@ -144,7 +118,7 @@ class OIDPService {
         return config
     }
 
-    private async fetchAccessToken(refreshToken: string | undefined = undefined) {
+    private async jobFetchAccessToken(refreshToken?: string) {
         if (OIDPService._authState === OIDPAuthState.InProgress) return
         OIDPService._authState = OIDPAuthState.InProgress
         const requestConfig = await this.getRequestConfig()
@@ -153,26 +127,31 @@ class OIDPService {
             return
         }
         logger.debug('OIDPService fetchAccessToken...')
-        const url = requestConfig.clientURL + OIDPUrls.auth
-        const reqXHTML = this.setRequestBody(refreshToken, requestConfig)
-        if (!reqXHTML) {
-            logger.error(`OIDPService cannot set request reqXHTML`)
-            OIDPService._authState = OIDPAuthState.NotStarted
-            return
-        }
         try {
-            if (refreshToken) logger.debug('OIDPService fetch by refresh token...')
-            const { data, status } = await axios.post<Authenticate>(url, reqXHTML, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-            });
-            return this.mapToAuthenticate(data)
+            let response: Authenticate
+            if (refreshToken) {
+                const requestBody: RequestAccessTokenByRefreshSchema = {
+                    client_id: requestConfig.clientId,
+                    refresh_token: refreshToken,
+                    grant_type: 'refresh_token',
+                    client_secret: requestConfig.clientSecret,
+                }
+                response = await this.fetchAcessTokenByRefreshToken(requestConfig.clientURL, requestBody)
+            }
+            const requestBody: RequestAccessTokenByPasswordSchema = {
+                client_id: requestConfig.clientId,
+                username: requestConfig.clientUsername,
+                password: requestConfig.clientPassword,
+                grant_type: 'password',
+                client_secret: requestConfig.clientSecret,
+            }
+            response = await this.fetchAcessTokenByPassword(requestConfig.clientURL, requestBody)
+            return this.mapToAuthenticate(response)
         } catch (e) {
             if (e instanceof Error) {
                 logger.error(`OIDPService fetch access token: ${e.message}`)
                 if (e instanceof AxiosError) {
-                    logger.error(`OIDPService fetch access url: ${url}`)
+                    logger.error(`OIDPService fetch access url: ${requestConfig.clientURL}`)
                     logger.error(`OIDPService fetch access client_id: ${requestConfig.clientId}`)
                     logger.error(`OIDPService fetch access response: ${e.response?.data}`)
                 }
@@ -180,6 +159,28 @@ class OIDPService {
             OIDPService._authState = OIDPAuthState.NotStarted
             return undefined
         }
+    }
+
+    async fetchAcessTokenByPassword(clientURL: string, reqBody: RequestAccessTokenByPasswordSchema) {
+        logger.debug('OIDPService fetch by password...')
+        const reqXHTML = new URLSearchParams(reqBody).toString()
+        return this.fetchAccessToken(clientURL, reqXHTML)
+    }
+
+    async fetchAcessTokenByRefreshToken(clientURL: string, reqBody: RequestAccessTokenByRefreshSchema) {
+        logger.debug('OIDPService fetch by refresh token...')
+        const reqXHTML = new URLSearchParams(reqBody).toString()
+        return this.fetchAccessToken(clientURL, reqXHTML)
+    }
+
+    private async fetchAccessToken(clientURL: string, reqXHTML: string) {
+        const url = clientURL + OIDPUrls.auth
+        const { data, status } = await axios.post<Authenticate>(url, reqXHTML, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        })
+        return data
     }
 
     private async getTokenAtDb() {

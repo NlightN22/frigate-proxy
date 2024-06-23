@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { withErrorHandler } from "../hooks/error.handler";
-import { PutConfigSchema, PutConfigsSchema, putConfigSchema, putConfigsSchema } from "./config.shema";
+import { PutConfigSchema, PutConfigsSchema, putConfigSchema, putConfigsSchema } from "./config.schema";
 import ConfigService from "./config.service";
 import { z } from "zod";
 

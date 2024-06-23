@@ -7,16 +7,17 @@ import { proxySchemas } from "./modules/proxy/proxy.schema"
 import { proxyWsSchemas } from "./modules/proxy-ws/proxy.ws.schema"
 import { rolesSchemas } from "./modules/roles/roles.schema"
 import { selectLanguageHook } from "./modules/hooks/select.lang.prehandler"
-import { configSchemas } from "./modules/config/config.shema"
+import { configSchemas } from "./modules/config/config.schema"
 import { cameraRoutes } from "./modules/camera/camera.route"
 import { frigateHostsRoutes } from "./modules/frigate-hosts/frigate-hosts.route"
 import { rolesRoutes } from "./modules/roles/roles.route"
 import { usersRoutes } from "./modules/users/users.route"
-import { configRoutes } from "./modules/config/config.router"
+import { configRoutes } from "./modules/config/config.route"
 import { proxyRoute } from "./modules/proxy/proxy.route"
 import websocket from '@fastify/websocket'
 import { proxyWsRoute } from "./modules/proxy-ws/proxy.ws.route"
 import cors from '@fastify/cors'
+import { configOIDPSchemas } from "./modules/config/oidp/config.oidp.schema"
 
 
 export interface User {
@@ -53,6 +54,7 @@ function buildServer() {
         ...proxyWsSchemas,
         ...rolesSchemas,
         ...configSchemas,
+        ...configOIDPSchemas,
     ]) {
         fastify.addSchema(schema)
     }

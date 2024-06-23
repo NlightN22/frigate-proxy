@@ -1,15 +1,14 @@
 import { FastifyReply, FastifyRequest } from "fastify"
 import * as jwt from 'jsonwebtoken'
 import jwksRsa from "jwks-rsa"
+import { z } from "zod"
 import { logger } from "../../utils/logger"
-import ConfigService from "../config/config.service"
+import ConfigOIDPService from "../config/oidp/config.oidp.service"
 import { OIDPUrls } from "../oidp/oidp.urls"
 import { ErrorApp } from "./error.handler"
 import { TokenUser } from "./token.shchema"
-import { z } from "zod"
-import ConfigOIDPService from "../config/oidp/config.oidp.service"
 
-const configOIDPService = new ConfigOIDPService()
+const configOIDPService = ConfigOIDPService.getInstance()
 
 const getUrl = async () => {
     const oidpConfig = await configOIDPService.getDecryptedOIDPConfig()

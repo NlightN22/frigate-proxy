@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 export interface OIDPRole {
   id: string
   name: string
@@ -63,3 +65,21 @@ export interface OIDPConfigService {
   clientPassword: string,
   clientURL: string,
 }
+
+export const requestAccessTokenByPasswordSchema = z.object({
+  client_id: z.string(),
+  username: z.string(),
+  password: z.string(),
+  grant_type: z.literal('password'),
+  client_secret: z.string(),
+})
+
+export const requestAccessTokenByRefreshSchema = z.object({
+  client_id: z.string(),
+  refresh_token: z.string(),
+  grant_type: z.literal('refresh_token'),
+  client_secret: z.string(),
+})
+
+export type RequestAccessTokenByPasswordSchema = z.infer<typeof requestAccessTokenByPasswordSchema>
+export type RequestAccessTokenByRefreshSchema = z.infer<typeof requestAccessTokenByRefreshSchema>

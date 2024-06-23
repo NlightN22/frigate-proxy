@@ -1,15 +1,12 @@
 import { createCipheriv, createDecipheriv, randomBytes, scrypt } from "crypto";
 import { promisify } from "util";
-import { z } from "zod";
 import { encryptionKey } from "../../consts";
 import { logger } from "../../utils/logger";
 import prisma from "../../utils/prisma";
 import { ErrorApp } from "../hooks/error.handler";
 import { allSettings } from "./all.settings";
 import { appSettingsKeys } from "./app.settings";
-import { PutConfigsSchema, ResponseConfigsSchema } from "./config.shema";
-import { oidpSettingsKeys } from "./oidp/oidp.settings";
-import { OIDPConfigService } from "../oidp/oidp.schema";
+import { PutConfigsSchema, ResponseConfigsSchema } from "./config.schema";
 
 export interface Setting {
     description: string,

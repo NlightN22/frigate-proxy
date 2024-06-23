@@ -17,4 +17,10 @@ export async function configOIDPRoutes(server: FastifyInstance) {
             response: { 200: $ref('responseTestOIDPConfig')},
         },
     }, configOIDPController.putTestOIDPConfigHandler)
+
+    server.get('/', {
+        schema: {
+            response: { 200: $ref('responseConfigsSchema')},
+        },
+    }, configOIDPController.getConfigsController)
 }

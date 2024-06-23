@@ -3,16 +3,19 @@ import { deepEqual } from "../../../utils/deep.equal";
 import { logger } from "../../../utils/logger";
 import { ErrorApp } from "../../hooks/error.handler";
 import { OIDPConfigService, RequestAccessTokenByPasswordSchema } from "../../oidp/oidp.schema";
-import ConfigService from "../config.service";
+import ConfigService, { Setting } from "../config.service";
 import { PutOIDPConfig, putOIDPConfig } from "./config.oidp.schema";
-import { oidpSettingsKeys } from "./oidp.settings";
+import { oIDPSettings, oidpSettingsKeys } from "./oidp.settings";
 import OIDPService from "../../oidp/oidp.service";
 import { AxiosError } from "axios";
+import prisma from "../../../utils/prisma";
+import { ResponseConfigsSchema } from "../config.schema";
 
 class ConfigOIDPService {
     private static _instance: ConfigOIDPService
     configService = ConfigService.getInstance()
     private oidpService: OIDPService
+    prismaClient = prisma.appSettings
 
     private constructor() {
         logger.debug(`ConfigOIDPService initialized`)
@@ -93,6 +96,21 @@ class ConfigOIDPService {
             throw e
         }
         return false
+    }
+
+    async getAllEncryptedConfig(): Promise<ResponseConfigsSchema> {
+        const dbConfig = await this.prismaClient.findMany()
+        const allMapSettings = new Map<string, Setting>(oIDPSettings)
+        const responseConfigs: ResponseConfigsSchema = Array.from(allMapSettings).map(([key, setting]) => {
+            const dbItem = dbConfig.find(item => item.key === key);
+            return {
+                key,
+                value: dbItem ? dbItem.value : '',
+                description: dbItem?.description ?? setting.description,
+                encrypted: setting.encrypted
+            }
+        })
+        return responseConfigs
     }
 
     async getDecryptedOIDPConfig(): Promise<OIDPConfigService | undefined> {

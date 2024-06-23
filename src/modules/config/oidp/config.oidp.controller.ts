@@ -25,6 +25,9 @@ class ConfigOIDPController {
         })
     });
 
+    getConfigsController = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
+        return rep.send(await this.configOIDPService.getAllEncryptedConfig())
+    })
     
 }
 

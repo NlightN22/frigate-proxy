@@ -6,8 +6,10 @@ import prisma from "../../utils/prisma"
 import { sleep } from "../../utils/sleep"
 import ConfigService from "../config/config.service"
 import { ErrorApp } from "../hooks/error.handler"
-import { AuthUser, OIDPRole, UserByRole } from "./oidp.schema"
+import { AuthUser, OIDPConfigService, OIDPRole, UserByRole } from "./oidp.schema"
 import { OIDPUrls } from "./oidp.urls"
+import { z } from "zod"
+import ConfigOIDPService from "../config/oidp/config.oidp.service"
 
 type Authenticate = {
     access_token: string
@@ -23,17 +25,9 @@ export enum OIDPAuthState {
     Completed,
 }
 
-export interface OIDPConfig {
-    clientId: string,
-    clientSecret: string,
-    clientUsername: string,
-    clientPassword: string,
-    clientURL: string,
-}
-
 class OIDPService {
     private static instance: OIDPService
-    configService = ConfigService.getInstance()
+    configOIDPService = new ConfigOIDPService()
     id: UUID
     private static _authenticate: Authenticate | null
     private static _authState: OIDPAuthState = OIDPAuthState.NotStarted
@@ -57,19 +51,19 @@ class OIDPService {
         return OIDPService.instance
     }
 
-    async fetchRoles() {
-        const data: OIDPRole[] = await this.fetcher(OIDPUrls.roles)
+    async fetchRoles(accessToken?: string, clientURL?: string) {
+        const data: OIDPRole[] = await this.fetcher(OIDPUrls.roles, accessToken, clientURL)
         return data
     }
 
-    async fetchUsers() {
-        const data: AuthUser[] = await this.fetcher(OIDPUrls.users)
+    async fetchUsers(accessToken?: string, clientURL?: string) {
+        const data: AuthUser[] = await this.fetcher(OIDPUrls.users, accessToken, clientURL)
         return data
     }
 
-    async fetchUsersByRole(roleName: string) {
+    async fetchUsersByRole(roleName: string, accessToken?: string, clientURL?: string) {
         logger.debug(`OIDPService fetch uses by role: ${roleName}`)
-        const data: UserByRole[] = await this.fetcher(OIDPUrls.usersByRole(roleName))
+        const data: UserByRole[] = await this.fetcher(OIDPUrls.usersByRole(roleName), accessToken, clientURL)
         return data
     }
 
@@ -95,22 +89,27 @@ class OIDPService {
                 this.setRefreshTokenTimeout()
             } else {
                 logger.debug("OIDPService get new token...")
-                this.getNewToken()
+                const authData = await this.getNewAuthenticateData()
+                this.setNewAuthenticateData(authData)
             }
         } catch (e) {
             logger.error(`ERROR! OIDPService not started: ${e.message}`)
         }
     }
 
-    private async getNewToken() {
+    private async getNewAuthenticateData(): Promise<Authenticate> {
         let data: Authenticate | undefined
         while (!data) {
             const refreshToken = OIDPService._authenticate?.refresh_token
             if (refreshToken && this.verifyJWT(refreshToken)) data = await this.fetchAccessToken(refreshToken)
             else data = await this.fetchAccessToken()
             if (!data) logger.debug('OIDPService not get access token from service')
-            await sleep(30000)
+            await sleep(30 * 1000) // wait 30 seconds
         }
+        return data
+    }
+
+    private async setNewAuthenticateData(data: Authenticate) {
         OIDPService._authenticate = data
         this.saveTokenToDb(data)
         this.setRefreshTokenTimeout()
@@ -118,7 +117,7 @@ class OIDPService {
         logger.debug('OIDPService set access token')
     }
 
-    private setRequestBody(refreshToken: string | undefined = undefined, requestConfig: OIDPConfig) {
+    private setRequestBody(refreshToken: string | undefined = undefined, requestConfig: OIDPConfigService) {
         let request
         if (refreshToken) {
             request = {
@@ -140,7 +139,7 @@ class OIDPService {
     }
 
     private async getRequestConfig() {
-        const config = await this.configService.getOIDPConfig()
+        const config = await this.configOIDPService.getDecryptedOIDPConfig()
         if (!config) logger.warn(`OIDPService cannot set request config: ${config}`)
         return config
     }
@@ -211,30 +210,41 @@ class OIDPService {
         if (timeUntilExpirationInSeconds > 0) {
             const expiresInMs = timeUntilExpirationInSeconds * 1000
             logger.debug(`OIDPService set expired token time to ${timeUntilExpirationInSeconds} sec`)
-            OIDPService._refreshTokenTimeout = setTimeout(() => {
+            OIDPService._refreshTokenTimeout = setTimeout(async () => {
                 logger.debug(`OIDPService access token expired. Start update token.`)
-                this.getNewToken()
+                const authData = await this.getNewAuthenticateData()
+                this.setNewAuthenticateData(authData)
             }, expiresInMs);
         }
     }
 
-    private async fetcher(path: string) {
+    private async fetcherTokenPrehandler() {
         if (!OIDPService._authenticate || !OIDPService._authenticate.access_token) throw Error(`OIDPService Authentication not completed, auth state ${OIDPService.authState}`)
-        const accessToken = OIDPService._authenticate.access_token
+        let accessToken = OIDPService._authenticate.access_token
         if (accessToken) {
             if (!this.verifyJWT(accessToken)) {
                 logger.debug('OIDPService.fetcher acess token not valid')
-                await this.getNewToken()
+                const authData = await this.getNewAuthenticateData()
+                this.setNewAuthenticateData(authData)
             }
         }
-        if (!this.verifyJWT(accessToken)) throw new ErrorApp('internal', 'OIDPService acess token not valid')
-        const requestConfig = await this.getRequestConfig()
-        if (!requestConfig) throw Error(`OIDPService config not set`)
-        const oidpURL = new URL (requestConfig.clientURL)
+        if (!accessToken || !this.verifyJWT(accessToken)) throw new ErrorApp('internal', 'OIDPService acess token not valid')
+        return accessToken
+    }
+
+    private async fetcher(path: string, accessToken?: string, clientURL?: string) {
+        if (!accessToken) accessToken = await this.fetcherTokenPrehandler()
+        if (!clientURL) {
+            const requestConfig = await this.getRequestConfig()
+            if (!requestConfig) throw Error(`OIDPService config not set`)
+            clientURL = requestConfig.clientURL
+        }
+        const parsedUrl = z.string().url().parse(clientURL)
+        const oidpURL = new URL(parsedUrl)
         const url = oidpURL.protocol + '//' + oidpURL.host + '/' + path
         try {
             const response = await axios.get(url, {
-                headers: { Authorization: `Bearer ${OIDPService._authenticate.access_token}` },
+                headers: { Authorization: `Bearer ${accessToken}` },
                 timeout: 70000,
             })
             return response.data
@@ -243,7 +253,6 @@ class OIDPService {
                 logger.error(`OIDPService: ${e.message}`)
                 if (e instanceof AxiosError) {
                     logger.error(`OIDPService fetch access url: ${url}`)
-                    logger.error(`OIDPService fetch access client_id: ${requestConfig.clientId}`)
                     logger.error(`OIDPService fetch access response: ${e.response?.data}`)
                 }
             }

@@ -55,3 +55,11 @@ interface Access {
   impersonate: boolean
   manage: boolean
 }
+
+export interface OIDPConfigService {
+  clientId: string,
+  clientSecret: string,
+  clientUsername: string,
+  clientPassword: string,
+  clientURL: string,
+}

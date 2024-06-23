@@ -7,11 +7,12 @@ import { OIDPUrls } from "../oidp/oidp.urls"
 import { ErrorApp } from "./error.handler"
 import { TokenUser } from "./token.shchema"
 import { z } from "zod"
+import ConfigOIDPService from "../config/oidp/config.oidp.service"
 
-const configService = ConfigService.getInstance()
+const configOIDPService = new ConfigOIDPService()
 
 const getUrl = async () => {
-    const oidpConfig = await configService.getOIDPConfig()
+    const oidpConfig = await configOIDPService.getDecryptedOIDPConfig()
     return oidpConfig?.clientURL
 }
 

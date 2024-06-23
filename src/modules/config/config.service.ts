@@ -5,11 +5,11 @@ import { encryptionKey } from "../../consts";
 import { logger } from "../../utils/logger";
 import prisma from "../../utils/prisma";
 import { ErrorApp } from "../hooks/error.handler";
-import { OIDPConfig } from "../oidp/oidp.service";
 import { allSettings } from "./all.settings";
 import { appSettingsKeys } from "./app.settings";
 import { PutConfigsSchema, ResponseConfigsSchema } from "./config.shema";
-import { oidpSettingsKeys } from "./oidp.settings";
+import { oidpSettingsKeys } from "./oidp/oidp.settings";
+import { OIDPConfigService } from "../oidp/oidp.schema";
 
 export interface Setting {
     description: string,
@@ -68,13 +68,13 @@ class ConfigService {
         const results = await Promise.all(configs.map(conf => this.saveConfig(conf.key, conf.value)))
         return results
     }
-    async getConfig(key: string) {
+    async getEncryptedConfig(key: string) {
         return await this.prismaClient.findUnique({
             where: { key: key }
         })
     }
 
-    async getEncryptedConfig(key: string) {
+    async getDecryptedConfig(key: string) {
         let config = await this.prismaClient.findUniqueOrThrow({ where: { key: key } })
         const { value, ...rest } = config
         if (!value) throw new ErrorApp('validate', `ConfigService. Key ${key} value does not exist`)
@@ -87,7 +87,7 @@ class ConfigService {
         return config
     }
 
-    async getAllConfig(): Promise<ResponseConfigsSchema> {
+    async getAllEncryptedConfig(): Promise<ResponseConfigsSchema> {
         const dbConfig = await this.prismaClient.findMany()
         const allMapSettings: Map<string, Setting> = this.getMapSettings()
         const responseConfigs: ResponseConfigsSchema = Array.from(allMapSettings).map(([key, setting]) => {
@@ -104,29 +104,9 @@ class ConfigService {
 
     async getAdminRole() {
         try {
-            const adminRole = await this.getEncryptedConfig(appSettingsKeys.adminRole)
+            const adminRole = await this.getDecryptedConfig(appSettingsKeys.adminRole)
             return adminRole
         } catch {
-            return undefined
-        }
-    }
-
-    async getOIDPConfig(): Promise<OIDPConfig | undefined> {
-        try{
-            const configUrl = (await this.getEncryptedConfig(oidpSettingsKeys.realmUrl)).value
-            const parsedZod = z.string().url().parse(configUrl)
-            const urlWithSlash = parsedZod.endsWith('/') ? parsedZod : parsedZod + '/'
-            const config: OIDPConfig = {
-                clientId: (await this.getEncryptedConfig(oidpSettingsKeys.clientId)).value,
-                clientSecret: (await this.getEncryptedConfig(oidpSettingsKeys.clientSecret)).value,
-                clientUsername: (await this.getEncryptedConfig(oidpSettingsKeys.clientUsername)).value,
-                clientPassword: (await this.getEncryptedConfig(oidpSettingsKeys.clientPassword)).value,
-                clientURL: urlWithSlash
-            }
-            return config
-        } catch (e) {
-            if (e instanceof Error)
-                logger.warn(`ConfigService getOIDPConfig: ${e.message}`)
             return undefined
         }
     }

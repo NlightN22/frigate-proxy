@@ -1,3 +1,5 @@
+// TODO delete
+
 // import { ExtractJwt, Strategy, StrategyOptionsWithSecret } from "passport-jwt";
 // import { OIDP } from "../../consts";
 // import jwksRsa from "jwks-rsa";

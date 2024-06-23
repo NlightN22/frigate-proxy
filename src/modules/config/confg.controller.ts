@@ -23,7 +23,7 @@ export const putConfigsController = withErrorHandler(async (req: FastifyRequest<
 })
 
 export const getConfigsController = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
-    return rep.send(await configService.getAllConfig())
+    return rep.send(await configService.getAllEncryptedConfig())
 })
 export const getAdminController = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
     return rep.send(await configService.getAdminRole())
@@ -32,6 +32,6 @@ export const getAdminController = withErrorHandler(async (req: FastifyRequest, r
 export const getConfigController = withErrorHandler(async (req: FastifyRequest<{
     Params: { key: string }
 }>, rep: FastifyReply) => {
-    return rep.send(await configService.getConfig(req.params.key))
+    return rep.send(await configService.getEncryptedConfig(req.params.key))
 })
 

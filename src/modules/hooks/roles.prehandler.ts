@@ -2,15 +2,17 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { logger } from "../../utils/logger";
 import { ErrorApp } from "./error.handler";
 import ConfigService from "../config/config.service";
+import ConfigOIDPService from "../config/oidp/config.oidp.service";
 
 export async function validateRole(request: FastifyRequest, reply: FastifyReply, allowedRoles: string[]) {
     const configService = ConfigService.getInstance()
+    const configOIDPService = new ConfigOIDPService()
 
     if (!allowedRoles || allowedRoles.length<1){
         logger.warn('Not set allowed roles to route. Pass')
         return
     }
-    const oidpConfig = await configService.getOIDPConfig()
+    const oidpConfig = await configOIDPService.getDecryptedOIDPConfig()
     if (!oidpConfig) {
         logger.warn('OpenID provider not set at config. Pass')
         return

@@ -15,7 +15,7 @@ export const oIDPSettings: MapSettings = [
         {
             description: 'OIDP Client ID',
             encrypted: false,
-            validateFn: (value) => z.string().safeParse(value).success,
+            validateFn: (value) => ({ validate: z.string().safeParse(value).success }),
         }
     ],
     [
@@ -23,7 +23,7 @@ export const oIDPSettings: MapSettings = [
         {
             description: 'OIDP Client secret',
             encrypted: true,
-            validateFn: (value) => z.string().safeParse(value).success,
+            validateFn: (value) => ({ validate: z.string().safeParse(value).success }),
         }
     ],
     [
@@ -31,7 +31,7 @@ export const oIDPSettings: MapSettings = [
         {
             description: 'OIDP Client username',
             encrypted: false,
-            validateFn: (value) => z.string().safeParse(value).success,
+            validateFn: (value) => ({ validate: z.string().safeParse(value).success }),
         },
     ],
     [
@@ -39,7 +39,7 @@ export const oIDPSettings: MapSettings = [
         {
             description: 'OIDP Client password',
             encrypted: true,
-            validateFn: (value) => z.string().safeParse(value).success,
+            validateFn: (value) => ({ validate: z.string().safeParse(value).success }),
         },
     ],
     [
@@ -50,7 +50,8 @@ export const oIDPSettings: MapSettings = [
             validateFn: async (value) => {
                 const { testJwksClientInitialization } = await import("../../hooks/jwks-rsa.prehandler")
                 const parsedURL = z.string().url().parse(value)
-                return await testJwksClientInitialization(parsedURL)
+                const result = await testJwksClientInitialization(parsedURL)
+                return result ? { validate: true } : { validate: false, message: 'JWKS Client test not success' }
             },
         },
     ]

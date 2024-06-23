@@ -3,13 +3,13 @@ import { deepEqual } from "../../../utils/deep.equal";
 import { logger } from "../../../utils/logger";
 import { ErrorApp } from "../../hooks/error.handler";
 import { OIDPConfigService, RequestAccessTokenByPasswordSchema } from "../../oidp/oidp.schema";
-import ConfigService, { Setting } from "../config.service";
+import ConfigService from "../config.service";
 import { PutOIDPConfig, putOIDPConfig } from "./config.oidp.schema";
 import { oIDPSettings, oidpSettingsKeys } from "./oidp.settings";
 import OIDPService from "../../oidp/oidp.service";
 import { AxiosError } from "axios";
 import prisma from "../../../utils/prisma";
-import { ResponseConfigsSchema } from "../config.schema";
+import { ResponseConfigsSchema, Setting } from "../config.schema";
 
 class ConfigOIDPService {
     private static _instance: ConfigOIDPService

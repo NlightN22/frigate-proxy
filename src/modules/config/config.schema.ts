@@ -43,3 +43,14 @@ export const { schemas: configSchemas, $ref } = buildJsonSchemas({
 },
     { $id: "configSchemas" }
 )
+
+export type ValidateResponse = {
+    validate: boolean,
+    message?: string
+}
+
+export interface Setting {
+    description: string,
+    encrypted: boolean,
+    validateFn?: (value: any, ...args: any[]) => ValidateResponse | Promise<ValidateResponse>
+}

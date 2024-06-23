@@ -6,13 +6,9 @@ import prisma from "../../utils/prisma";
 import { ErrorApp } from "../hooks/error.handler";
 import { allSettings } from "./all.settings";
 import { appSettingsKeys } from "./app.settings";
-import { PutConfigsSchema, ResponseConfigsSchema } from "./config.schema";
+import { PutConfigsSchema, ResponseConfigsSchema, Setting, ValidateResponse } from "./config.schema";
 
-export interface Setting {
-    description: string,
-    encrypted: boolean,
-    validateFn?: (value: any) => boolean | Promise<boolean>
-}
+
 
 export type MapSettings = [string, Setting][]
 
@@ -36,8 +32,13 @@ class ConfigService {
         const setting = allMapSettings.get(key)
         if (!setting) throw new ErrorApp('validate', `ConfigService. Settings with ${key}, does not exist`)
         if (setting.validateFn) {
-            const result = await setting.validateFn(value)
-            if (!result) throw new ErrorApp('validate', `ConfigService. Settings with ${key}, not validated`)
+            let result: ValidateResponse
+            if (key === appSettingsKeys.adminRole) {
+                result = await setting.validateFn(value, this.prismaClient)
+            } else {
+                result = await setting.validateFn(value)
+            }
+            if (!result.validate) throw new ErrorApp('validate', `ConfigService. Settings with ${key}, not validated. ${result.message}`)
         }
         // check equals at prisma
         const settingDB = await this.prismaClient.findUnique({

@@ -18,5 +18,5 @@ RUN yarn prisma generate
 
 COPY ./dist ./dist
 
-CMD yarn prod
+CMD npx prisma db push && yarn prod
 EXPOSE 4000

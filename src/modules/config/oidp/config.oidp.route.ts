@@ -6,21 +6,21 @@ export async function configOIDPRoutes(server: FastifyInstance) {
     const configOIDPController = new ConfigOIDPController()
     server.put('/', {
         schema: {
-            body: $ref('putOIDPConfig'), 
-            response: { 201: $ref('responseConfigsSchema')},
+            body: $ref('oIDPConfigSchema'), 
+            response: { 201: $ref('responseOIDPConfigSchema')},
         },
     }, configOIDPController.putOIDPConfigHandler)
 
     server.put('/test', {
         schema: {
-            body: $ref('putOIDPConfig'), 
-            response: { 200: $ref('responseTestOIDPConfig')},
+            body: $ref('oIDPConfigSchema'), 
+            response: { 200: $ref('responseOIDPConfigSchema')},
         },
     }, configOIDPController.putTestOIDPConfigHandler)
 
     server.get('/', {
         schema: {
-            response: { 200: $ref('responseConfigsSchema')},
+            response: { 200: $ref('oIDPConfigSchema')},
         },
     }, configOIDPController.getConfigsController)
 }

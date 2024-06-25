@@ -29,6 +29,26 @@ export async function rolesRoutes(server: FastifyInstance) {
             await validateRole(request, reply, allowedRoles);
         }
     }, controller.updateRoleCamerasHandler)
+
+    server.put('/',controller.updateRolesHandler)
+
+    server.get('/', {
+        schema: {
+            response: {
+                200: $ref('responseRolesSchema')
+            }
+        }
+    }, controller.getRolesHandler)
+
+    server.get('/:id', {
+        schema: {
+            params: getRoleByIdSchema,
+            response: {
+                200: $ref('responseRolesAndCamerasSchema')
+            }
+        }
+    }, controller.getRoleHandler)
+
     server.delete('/:id/cameras', {
         schema:{
             params: getRoleByIdSchema,
@@ -42,21 +62,5 @@ export async function rolesRoutes(server: FastifyInstance) {
             await validateRole(request, reply, allowedRoles);
         }
     }, controller.deleteRoleCamerasHandler)
-    server.get('/', {
-        schema: {
-            response: {
-                200: $ref('responseRolesSchema')
-            }
-        }
-    }, controller.getRolesHandler)
-    server.get('/:id', {
-        schema: {
-            params: getRoleByIdSchema,
-            response: {
-                200: $ref('responseRolesAndCamerasSchema')
-            }
-        }
-    }, controller.getRoleHandler)
-
 }
 

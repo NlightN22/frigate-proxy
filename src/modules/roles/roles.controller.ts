@@ -19,6 +19,10 @@ class RolesController {
         rep.send(await this.rolesService.getRoleOrError(id))
     })
 
+    updateRolesHandler = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
+        rep.send(await this.rolesService.updateRoles())
+    })
+
     updateRoleCamerasHandler = withErrorHandler(async (req: FastifyRequest<{
         Params: { id: string }
         Body: AddRoleCamerasSchema

@@ -4,7 +4,7 @@ import { logger } from "../../../utils/logger";
 import { ErrorApp } from "../../hooks/error.handler";
 import { OIDPConfigService, RequestAccessTokenByPasswordSchema } from "../../oidp/oidp.schema";
 import ConfigService from "../config.service";
-import { PutOIDPConfig, putOIDPConfig } from "./config.oidp.schema";
+import { PutOIDPConfig, ResponseOIDPConfig, oIDPConfigSchema } from "./config.oidp.schema";
 import { oIDPSettings, oidpSettingsKeys } from "./oidp.settings";
 import OIDPService from "../../oidp/oidp.service";
 import { AxiosError } from "axios";
@@ -27,10 +27,10 @@ class ConfigOIDPService {
         }
         return ConfigOIDPService._instance
     }
-    async saveOIDPconfig(inputOIDPConfig: PutOIDPConfig) {
+    async saveOIDPconfig(inputOIDPConfig: PutOIDPConfig): Promise<ResponseOIDPConfig> {
         const result = await this.testOIDPconfig(inputOIDPConfig)
         if (result) {
-            return await this.configService.saveConfigs([
+            await this.configService.saveConfigs([
                 {
                     key: oidpSettingsKeys.clientId,
                     value: inputOIDPConfig.clientId
@@ -52,18 +52,24 @@ class ConfigOIDPService {
                     value: inputOIDPConfig.clientURL
                 }
             ])
-
+            return {
+                success: true,
+                message: 'OIDP config sucessfully saved'
+            }
         }
-        throw new ErrorApp('internal', 'Not get result from OIDP settings test')
+        return {
+            success: false,
+            message: 'OIDP config not saved'
+        }
     }
 
-    async testOIDPconfig(inputOIDPConfig: PutOIDPConfig): Promise<boolean> {
+    async testOIDPconfig(inputOIDPConfig: PutOIDPConfig): Promise<ResponseOIDPConfig> {
         logger.debug('Testing new OIDP settings...')
         const currentDecrypted = await this.getDecryptedOIDPConfig()
         const urlWithSlash = inputOIDPConfig.clientURL.endsWith('/') ? inputOIDPConfig.clientURL : inputOIDPConfig.clientURL + '/'
         inputOIDPConfig.clientURL = urlWithSlash
         if (currentDecrypted) {
-            const parsedCurrentDecrypted = putOIDPConfig.parse(currentDecrypted)
+            const parsedCurrentDecrypted = oIDPConfigSchema.parse(currentDecrypted)
             logger.debug('Comparing new OIDP settings and saved at DB...')
             const isEqual = deepEqual(inputOIDPConfig, parsedCurrentDecrypted)
             logger.silly(`inputOIDPConfig: ${JSON.stringify(inputOIDPConfig)}`)
@@ -86,7 +92,7 @@ class ConfigOIDPService {
         try {
             const data = await this.oidpService.fetchAcessTokenByPassword(inputOIDPConfig.clientURL, requestBody)
             if (data.access_token) {
-                return true
+                return { success: true }
             }
         }
         catch (e) {
@@ -95,9 +101,10 @@ class ConfigOIDPService {
             }
             throw e
         }
-        return false
+        return { success: false }
     }
 
+    // TODO delete
     async getAllEncryptedConfig(): Promise<ResponseConfigsSchema> {
         const dbConfig = await this.prismaClient.findMany()
         const allMapSettings = new Map<string, Setting>(oIDPSettings)

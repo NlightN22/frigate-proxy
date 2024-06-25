@@ -9,24 +9,21 @@ class ConfigOIDPController {
     putOIDPConfigHandler = withErrorHandler(async (req: FastifyRequest<{
         Body: schemas.PutOIDPConfig
     }>, rep: FastifyReply) => {
-        const parsed = schemas.putOIDPConfig.parse(req.body)
-        const savedConfig = await this.configOIDPService.saveOIDPconfig(parsed)
-        // rep.send('test')
-        rep.send(savedConfig)
+        const parsed = schemas.oIDPConfigSchema.parse(req.body)
+        const result = await this.configOIDPService.saveOIDPconfig(parsed)
+        rep.send(result)
     });
 
     putTestOIDPConfigHandler = withErrorHandler(async (req: FastifyRequest<{
         Body: schemas.PutOIDPConfig
     }>, rep: FastifyReply) => {
-        const parsed = schemas.putOIDPConfig.parse(req.body)
+        const parsed = schemas.oIDPConfigSchema.parse(req.body)
         const result = await this.configOIDPService.testOIDPconfig(parsed)
-        rep.send({
-            success: result
-        })
+        rep.send(result)
     });
 
     getConfigsController = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
-        return rep.send(await this.configOIDPService.getAllEncryptedConfig())
+        return rep.send(await this.configOIDPService.getDecryptedOIDPConfig())
     })
     
 }

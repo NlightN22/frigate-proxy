@@ -2,7 +2,7 @@ import { buildJsonSchemas } from "fastify-zod";
 import { z } from "zod";
 import { ResponseConfigsSchema, responseConfigsSchema } from "../config.schema";
 
-export const putOIDPConfig = z.object({
+export const oIDPConfigSchema = z.object({
     clientId: z.string(),
     clientSecret: z.string(),
     clientUsername: z.string(),
@@ -10,18 +10,19 @@ export const putOIDPConfig = z.object({
     clientURL: z.string(),
 })
 
-export const responseTestOIDPConfig = z.object({
-    success: z.boolean()
+export const responseOIDPConfigSchema = z.object({
+    success: z.boolean(),
+    message: z.string().optional()
 })
 
-export type PutOIDPConfig = z.infer<typeof putOIDPConfig>
-export type ResponseTestOIDPConfig = z.infer<typeof responseTestOIDPConfig>
-export type ResponseOIDPConfig =  ResponseConfigsSchema
+export type PutOIDPConfig = z.infer<typeof oIDPConfigSchema>
+export type GetOIDPConfig = PutOIDPConfig
+export type ResponseOIDPConfig = z.infer<typeof responseOIDPConfigSchema>
 
 export const { schemas: configOIDPSchemas, $ref } = buildJsonSchemas({
-    putOIDPConfig,
+    oIDPConfigSchema,
     responseConfigsSchema,
-    responseTestOIDPConfig,
+    responseOIDPConfigSchema,
 },
     { $id: "configOIDPSchemas" }
 )

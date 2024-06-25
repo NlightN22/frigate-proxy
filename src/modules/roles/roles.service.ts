@@ -13,7 +13,7 @@ class RolesService {
     oidpService = OIDPService.getInstance()
 
     constructor() {
-        this.updateRoles(60000)
+        this.updateRolesJob(60000)
         logger.debug(`RolesService initialized`)
     }
 
@@ -78,30 +78,36 @@ class RolesService {
         })
     }
 
-    private async updateRoles(updatePeriod: number = 5000) {
+    private async updateRolesJob(updatePeriod: number = 5000) {
         while (true && !dev.disableUpdates) {
             const startTime = Date.now()
             try {
-                if (OIDPService.authState === OIDPAuthState.Completed) {
-                    logger.debug('RolesService start updateRoles')
-                    const data = await this.oidpService.fetchRoles()
-                    if (data) {
-                        const roles: RoleCoreSchema[] = data.map(({ id, name }) => ({ id, name }))
-                        if (!roles || roles.length < 1) throw new Error('RolesService cannot get roles from OIDP')
-                        else {
-                            await this.saveRolesToDb(roles)
-                            const missingRoles = await this.findNonExistRolesInDb(roles)
-                            await this.deleteNonExistRoles(missingRoles)
-                        }
-                    }
-                }
+                logger.debug('RolesService starting updateRoles...')
+                await this.updateRoles()
             } catch (e) {
-                logger.error(`RolesService ${e.message}`)
+                logger.error(e.message)
             } finally {
                 logger.debug(`RolesService finish updateRoles at ${(Date.now() - startTime) / 1000} sec`)
             }
             await sleep(updatePeriod)
         }
+    }
+
+    async updateRoles(): Promise<RoleCoreSchema[]> {
+        if (OIDPService.authState === OIDPAuthState.Completed) {
+            const data = await this.oidpService.fetchRoles()
+            if (data) {
+                const roles: RoleCoreSchema[] = data.map(({ id, name }) => ({ id, name }))
+                if (!roles || roles.length < 1) throw new ErrorApp('internal', 'RolesService cannot get roles from OIDP')
+                else {
+                    await this.saveRolesToDb(roles)
+                    const missingRoles = await this.findNonExistRolesInDb(roles)
+                    await this.deleteNonExistRoles(missingRoles)
+                    return roles
+                }
+            }
+        }
+        return []
     }
 
     private async upsertRole(role: RoleCoreSchema) {

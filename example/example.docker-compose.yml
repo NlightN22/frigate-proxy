@@ -34,7 +34,7 @@ services:
   # Mongo in replica set mode. Backend works with only replica set mongo db
   # connect with compass at direct connection mode, e.g mongodb://user:password@localhost:27017/?authSource=admin&directConnection=true
   mongo:
-    image: mongo
+    image: mongo:7.0.6
     command: ["/bin/bash", "/docker-entrypoint-initdb.d/init-mongo-set.sh"]
     ports:
       - 127.0.0.1:27017:27017

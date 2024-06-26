@@ -1,3 +1,5 @@
+# tested only with mongo 7.0.6
+
 chmod 400 /opt/keyfile && \
 chown 999 /opt/keyfile && \
 mongod --bind_ip_all --replSet rs0 --keyFile /opt/keyfile &

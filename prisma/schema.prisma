@@ -1,7 +1,7 @@
 // This is your Prisma schema file,
 // Update prisma: yarn prisma generate
 // Create prisma migration: yarn prisma migrate dev --name make-serverid-optional
-// Update MongoDB end prisma client: yarn prisma db push
+// Update MongoDB and prisma client: yarn prisma db push
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -14,17 +14,19 @@ datasource db {
 }
 
 model Camera {
-  id            String       @id @default(auto()) @map("_id") @db.ObjectId
-  createAt      DateTime     @default(now())
-  updateAt      DateTime     @updatedAt
+  id            String           @id @default(auto()) @map("_id") @db.ObjectId
+  createAt      DateTime         @default(now())
+  updateAt      DateTime         @updatedAt
   name          String
   url           String?
-  frigateHost   FrigateHost? @relation(fields: [frigateHostId], references: [id], onDelete: Cascade)
-  frigateHostId String?      @db.ObjectId
-  roles         Role[]       @relation(fields: [rolesIDs], references: [id])
+  frigateHost   FrigateHost?     @relation(fields: [frigateHostId], references: [id], onDelete: Cascade)
+  frigateHostId String?          @db.ObjectId
+  roles         Role[]           @relation(fields: [rolesIDs], references: [id])
   rolesIDs      String[]
   state         Boolean?
   config        Json?
+  tags          UserCameraTags[] @relation(fields: [tagsIds], references: [id])
+  tagsIds       String[]         @db.ObjectId
 }
 
 model FrigateHost {
@@ -62,4 +64,14 @@ model AppSettings {
   value       String
   encrypted   Boolean
   description String?
+}
+
+model UserCameraTags {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  createAt    DateTime @default(now())
+  updateAt    DateTime @updatedAt
+  value       String
+  userId      String
+  cameras     Camera[] @relation(fields: [cameraIDs], references: [id])
+  cameraIDs   String[] @db.ObjectId
 }

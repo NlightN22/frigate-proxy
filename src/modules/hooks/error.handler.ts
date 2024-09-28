@@ -6,6 +6,10 @@ import { ZodError } from "zod";
 type Handler<T extends RouteGenericInterface = RouteGenericInterface> = (req: FastifyRequest<T>, rep: FastifyReply) => Promise<void>;
 
 
+// erorr types
+// internal
+// validation
+
 export class ErrorApp extends Error {
     code: string
     constructor (code: string, message: string) {

@@ -160,6 +160,8 @@ class CameraService {
                 roles: true
             }
         })
+
+        // TODO add cascade delete tags
     }
 
     async getCamerasByRole(roleId: string) {

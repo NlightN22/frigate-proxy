@@ -25,8 +25,7 @@ model Camera {
   rolesIDs      String[]
   state         Boolean?
   config        Json?
-  tags          UserCameraTags[] @relation(fields: [tagsIds], references: [id])
-  tagsIds       String[]         @db.ObjectId
+  tags          CameraTag[]       @relation("CameraTags")
 }
 
 model FrigateHost {
@@ -66,12 +65,19 @@ model AppSettings {
   description String?
 }
 
-model UserCameraTags {
-  id          String @id @default(auto()) @map("_id") @db.ObjectId
-  createAt    DateTime @default(now())
-  updateAt    DateTime @updatedAt
+model UserTags {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  createAt    DateTime     @default(now())
+  updateAt    DateTime     @updatedAt
   value       String
   userId      String
-  cameras     Camera[] @relation(fields: [cameraIDs], references: [id])
-  cameraIDs   String[] @db.ObjectId
+  cameras     CameraTag[]  @relation("TagCameras")
+}
+
+model CameraTag {
+  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  camera     Camera         @relation("CameraTags", fields: [cameraId], references: [id], onDelete: Cascade)
+  cameraId   String         @db.ObjectId
+  tag        UserTags       @relation("TagCameras", fields: [tagId], references: [id], onDelete: Cascade)
+  tagId      String         @db.ObjectId  
 }

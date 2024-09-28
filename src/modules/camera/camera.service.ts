@@ -28,29 +28,38 @@ class CameraService {
 
     async getAllCameras(userRoles: string[]) {
         const adminRole = await this.configService.getAdminRole()
-        if (!adminRole || userRoles.find(role => role === adminRole.value)) {
-            return await this.prismaClient.findMany({
-                include: {
-                    frigateHost: true,
-                    roles: true
-                }
-            })
-        }
-        return await this.prismaClient.findMany({
-            where: {
-                roles: {
-                    some: {
-                        name: {
-                            in: userRoles
-                        }
-                    }
-                }
-            },
+        const cameras = await this.prismaClient.findMany({
             include: {
                 frigateHost: true,
-                roles: true
-            }
-        })
+                roles: true,
+            },
+            where: !adminRole || userRoles.includes(adminRole.value)
+                ? undefined 
+                : {
+                    roles: {
+                        some: {
+                            name: { in: userRoles }, 
+                        },
+                    },
+                },
+        });
+        const allTagIds = cameras.flatMap((camera) => camera.tagIds);
+
+        const tags = await prisma.userTags.findMany({
+            where: { id: { in: allTagIds } },
+        });
+    
+        const tagsMap = tags.reduce((acc, tag) => {
+            acc[tag.id] = tag;
+            return acc;
+        }, {} as Record<string, typeof tags[0]>);
+    
+        const camerasWithTags = cameras.map((camera) => ({
+            ...camera,
+            tags: camera.tagIds.map((tagId) => tagsMap[tagId]),
+        }));
+    
+        return camerasWithTags;
     }
 
     async getAllCamerasByHost(userRoles: string[], hostId: string) {
@@ -66,6 +75,9 @@ class CameraService {
                 }
             })
         }
+
+
+
         return await this.prismaClient.findMany({
             where: {
                 frigateHostId: hostId,
@@ -83,6 +95,7 @@ class CameraService {
             }
         })
     }
+
     async getCamerasByIds(cameraIds: string[]) {
         return await this.prismaClient.findMany({
             where: {
@@ -96,7 +109,7 @@ class CameraService {
     }
 
     async getCamera(id: string) {
-        return await this.prismaClient.findUniqueOrThrow({
+        const camera = await this.prismaClient.findUniqueOrThrow({
             where: {
                 id: id
             },
@@ -105,6 +118,14 @@ class CameraService {
                 roles: true
             }
         })
+        const tags = await prisma.userTags.findMany({
+            where: { id: { in: camera.tagIds } },
+        })
+
+        return {
+            ...camera,
+            tags,
+        }
     }
 
     async getCamerState(id: string) {

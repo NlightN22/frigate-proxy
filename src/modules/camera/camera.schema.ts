@@ -3,6 +3,7 @@ import { z } from "zod";
 import { responseHostSchema } from "../frigate-hosts/frigate-hosts.schema";
 import { responseRoleSchema } from "../roles/roles.schema";
 import { responseCameraCoreSchema, responseCameraStateSchema } from "./camera.core.schema";
+import { tagsArraySchema } from "../tag/tag.schema";
 
 export const getByHostIdSchema = {
     type: 'object',
@@ -28,6 +29,7 @@ export const getByCameraIdSchema = {
 export const responseCameraSchema = responseCameraCoreSchema.merge(z.object({
     frigateHost: responseHostSchema.optional(),
     roles: responseRoleSchema.array().optional(),
+    tags: tagsArraySchema.optional(),
 }))
 
 export const responseCamerasSchema = responseCameraSchema.array()

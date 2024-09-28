@@ -20,24 +20,32 @@ class TagService {
     }
 
     async upsertTag(tag: PutTagCameraSchema, userId: string) {
-        const { id, cameras, ...rest } = tag
-        return this.prismaClient.upsert({
-            where: { id: tag.id },
+        const { id, ...rest } = tag
+
+        const updatedTag = await this.prismaClient.upsert({
+            where: { value_userId: { value: tag.value, userId } },
             update: {
                 userId,
                 ...rest,
-                cameras: {
-                    connect: cameras.map((camera) => ({ id: camera.id }))
-                }
             },
             create: {
                 userId,
                 ...rest,
-                cameras: {
-                    connect: [],
-                }
-            }
+            },
         })
+
+        await Promise.all(
+            tag.cameraIds.map(async (cameraId) => {
+                await prisma.camera.update({
+                    where: { id: cameraId },
+                    data: {
+                        tagIds: { push: updatedTag.id },
+                    },
+                });
+            })
+        )
+
+        return updatedTag
     }
 
     async getAllTags(userId: string) {
@@ -45,9 +53,6 @@ class TagService {
             where: {
                 userId
             },
-            include: {
-                cameras: true
-            }
         })
     }
 
@@ -57,26 +62,41 @@ class TagService {
                 id: tagId,
                 userId
             },
-            include: {
-                cameras: true
-            }
         })
     }
 
     async deleteTag(tagId: string, userId: string) {
 
-        await prisma.cameraTag.deleteMany({
-            where: { tagId }
+        const tag = await this.prismaClient.findUniqueOrThrow({
+            where: { id: tagId },
+            select: { cameraIds: true },
         })
+
+        await Promise.all(
+            tag.cameraIds.map(async (cameraId) => {
+                const camera = await prisma.camera.findUniqueOrThrow({
+                    where: { id: cameraId },
+                    select: { tagIds: true },
+                });
+
+                await prisma.camera.update({
+                    where: { id: cameraId },
+                    data: {
+                        tagIds: {
+                            set: camera.tagIds.filter((id) => id !== tagId),
+                        },
+                    },
+                })
+            })
+        )
 
         return await this.prismaClient.delete({
             where: {
                 id: tagId,
-                userId
-            }
-        })
+                userId,
+            },
+        });
     }
-
 }
 
 export default TagService

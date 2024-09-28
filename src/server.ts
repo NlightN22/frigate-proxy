@@ -18,6 +18,8 @@ import websocket from '@fastify/websocket'
 import { proxyWsRoute } from "./modules/proxy-ws/proxy.ws.route"
 import cors from '@fastify/cors'
 import { configOIDPSchemas } from "./modules/config/oidp/config.oidp.schema"
+import { tagsRoutes } from "./modules/tag/tag.route"
+import { tagsSchemas } from "./modules/tag/tag.schema"
 
 
 export interface User {
@@ -55,6 +57,7 @@ function buildServer() {
         ...rolesSchemas,
         ...configSchemas,
         ...configOIDPSchemas,
+        ...tagsSchemas,
     ]) {
         fastify.addSchema(schema)
     }
@@ -80,6 +83,7 @@ function buildServer() {
     fastify.register(cameraRoutes, { prefix: 'apiv1/cameras' })
     fastify.register(frigateHostsRoutes, { prefix: 'apiv1/frigate-hosts' })
     fastify.register(rolesRoutes, { prefix: 'apiv1/roles' })
+    fastify.register(tagsRoutes, { prefix: 'apiv1/tags' })
     fastify.register(usersRoutes, { prefix: 'apiv1/users' })
     fastify.register(configRoutes, { prefix: 'apiv1/config' })
     fastify.register(proxyRoute, { prefix: 'proxy' })

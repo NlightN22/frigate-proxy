@@ -27,7 +27,7 @@ export async function tagsRoutes(server: FastifyInstance) {
     server.get('/', {
         schema: {
             response: {
-                200: $ref('responseTagsCamerasSchema')
+                // 200: $ref('responseTagsCamerasSchema')
             }
         }
     }, controller.getTagsCamerasHandler)

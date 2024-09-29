@@ -34,6 +34,7 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
     // Routes for authenticated users
 
     server.decorateRequest('user')
+    
     server.get('/', {
         preValidation: [validateJwt],
         schema: {
@@ -115,7 +116,7 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
         schema: {
             body: $ref('deleteHostsSchema'),
             // response: {
-            //     200: $ref("responseHostsSchema")
+            //     201: $ref("responseHostsSchema")
             // }
         },
     }, controller.deleteHostsHandler)

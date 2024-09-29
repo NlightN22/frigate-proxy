@@ -1,36 +1,12 @@
 import { FastifyInstance } from 'fastify';
-import { Response } from 'light-my-request';
-import { Test, test } from 'tap';
+import { test } from 'tap';
 import { ImportMock } from 'ts-mock-imports';
 import { mockServices } from '../../../__test__/mocked.services';
 import { testCameraSchema } from '../../../__test__/test.schemas';
+import { httpResponseTest, cleanAfterTest, removeProperty } from '../../../__test__/test.utils';
 import buildServer from '../../../server';
-import prisma from '../../../utils/prisma';
 import * as cameraService from '../camera.service';
 
-
-function removeProperty(obj, propName) {
-    const { [propName]: _, ...rest } = obj;
-    return rest;
-}
-
-function addProperty(obj, propName) {
-    return { [propName]: null, ...obj };
-}
-
-function refreshBeforeTest(fastify: FastifyInstance, t: Test) {
-    t.teardown(async () => {
-        fastify.close()
-        ImportMock.restore()
-        await prisma.camera.deleteMany({})
-    })
-}
-
-function httpResponseTest(t: Test, response: Response, statusCode: number = 200) {
-    t.equal(response.statusCode, statusCode)
-    t.equal(response.headers['content-type'], 'application/json; charset=utf-8')
-
-}
 
 const responseExample = {
     id: '65d0b991f6593bd703ff76ad',
@@ -44,7 +20,7 @@ const responseExample = {
     config: null
 }
 
-async function createCamera(fastify: FastifyInstance) {
+async function postCamera(fastify: FastifyInstance) {
     return await fastify.inject({
         method: 'POST',
         url: '/apiv1/cameras',
@@ -56,15 +32,11 @@ async function createCamera(fastify: FastifyInstance) {
 }
 
 test(' GET cameras - get cameras from mock', async (t) => {
-    mockServices(['camerasService'])
-    const cameraServiceStub = ImportMock.mockClass(cameraService, 'default')
-    cameraServiceStub.mock('getAllCameras', [testCameraSchema])
+    const mocks = mockServices()
+    mocks.camerasService?.mock('getAllCameras', [testCameraSchema])
     const fastify = buildServer()
 
-    t.teardown(() => {
-        fastify.close()
-        ImportMock.restore()
-    })
+    cleanAfterTest(fastify, t)
 
     const response = await fastify.inject({
         method: 'GET',
@@ -81,9 +53,9 @@ test(' POST camera - create camera with test database', async (t) => {
     mockServices(['camerasService'])
     const fastify = buildServer()
 
-    refreshBeforeTest(fastify, t)
+    cleanAfterTest(fastify, t)
 
-    const createResponse = await createCamera(fastify)
+    const createResponse = await postCamera(fastify)
 
     httpResponseTest(t, createResponse, 201)
 
@@ -97,9 +69,9 @@ test(' GET cameras - create by POST and get cameras from DB', async (t) => {
     mockServices(['camerasService'])
     const fastify = buildServer()
 
-    refreshBeforeTest(fastify, t)
+    cleanAfterTest(fastify, t)
 
-    const createResponse = await createCamera(fastify)
+    const createResponse = await postCamera(fastify)
 
     const jsonCreate = createResponse.json()
     t.equal(jsonCreate.name, testCameraSchema.name)
@@ -120,9 +92,9 @@ test(' GET camera - create by POST and get camera from DB', async (t) => {
     mockServices(['camerasService'])
     const fastify = buildServer()
 
-    refreshBeforeTest(fastify, t)
+    cleanAfterTest(fastify, t)
 
-    const createResponse = await createCamera(fastify)
+    const createResponse = await postCamera(fastify)
 
     const jsonCreate = createResponse.json()
     t.hasOwnPropsOnly(jsonCreate, Object.getOwnPropertyNames(responseExample))
@@ -145,9 +117,9 @@ test(' PUT camera - create by POST and PUT changes to DB', async (t) => {
     mockServices(['camerasService'])
     const fastify = buildServer()
 
-    refreshBeforeTest(fastify, t)
+    cleanAfterTest(fastify, t)
 
-    const createResponse = await createCamera(fastify)
+    const createResponse = await postCamera(fastify)
 
     const jsonCreate = createResponse.json()
     t.hasOwnPropsOnly(jsonCreate, Object.getOwnPropertyNames(responseExample))
@@ -165,7 +137,7 @@ test(' PUT camera - create by POST and PUT changes to DB', async (t) => {
     httpResponseTest(t, response, 201)
 
     const jsonGet = response.json()
-    const jsonGetWithoutUpdateAt = removeProperty(jsonGet, 'updateAt');
+    const jsonGetWithoutUpdateAt = removeProperty(jsonGet, 'updateAt')
     const jsonCreateWithoutUpdateAt = removeProperty(jsonCreate, 'updateAt')
     t.matchOnly(jsonGetWithoutUpdateAt, jsonCreateWithoutUpdateAt)
 })
@@ -173,9 +145,9 @@ test(' DEL camera - create by POST and DEL from DB', async (t) => {
     mockServices(['camerasService'])
     const fastify = buildServer()
 
-    refreshBeforeTest(fastify, t)
+    cleanAfterTest(fastify, t)
 
-    const createResponse = await createCamera(fastify)
+    const createResponse = await postCamera(fastify)
 
     const jsonCreate = createResponse.json()
     t.hasOwnPropsOnly(jsonCreate, Object.getOwnPropertyNames(responseExample))

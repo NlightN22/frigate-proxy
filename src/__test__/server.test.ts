@@ -1,7 +1,6 @@
-import { test } from 'tap'
-import buildServer from '../server'
-import { ImportMock } from 'ts-mock-imports'
-import { FastifyInstance } from 'fastify';
+import { test } from 'tap';
+import { ImportMock } from 'ts-mock-imports';
+import buildServer from '../server';
 import { mockServices } from './mocked.services';
 
 

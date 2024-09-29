@@ -1,8 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify"
-import { ErrorApp, withErrorHandler } from "../hooks/error.handler"
 import { z } from "zod"
-import TagService from "./tag.service"
+import { ErrorApp, withErrorHandler } from "../hooks/error.handler"
 import { PutTagCameraSchema, putTagCamerasSchema } from "./tag.schema"
+import TagService from "./tag.service"
 
 
 class TagController {
@@ -13,7 +13,10 @@ class TagController {
     }>, rep: FastifyReply) => {
         if (!req.user) throw new ErrorApp('internal', 'User id does not exist')
         const parsedTag = putTagCamerasSchema.parse(req.body)
-        if (parsedTag.value.length < 1 || parsedTag.value.length > 5) throw new ErrorApp('validation', 'Tag name can not be empty or bigger than 5 symbols')
+        const maxTagLength = 10
+        if (parsedTag.value.length < 1 || parsedTag.value.length > maxTagLength) {
+            throw new ErrorApp('validation', `Tag name cannot be empty or bigger than ${maxTagLength} symbols`)
+        }
         rep.send(await this.tagsService.upsertTag(parsedTag, req.user.id))
     })
 

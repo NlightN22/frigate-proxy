@@ -1,11 +1,8 @@
-import { Camera, Role } from "@prisma/client";
+import { logger } from "../../utils/logger";
 import prisma from "../../utils/prisma";
+import ConfigService from "../config/config.service";
 import { ErrorApp } from "../hooks/error.handler";
 import { CreateCameraSchema, UpdateCameraSchema } from "./camera.schema";
-import { logger } from "../../utils/logger";
-import { init } from "i18next";
-import { sleep } from "../../utils/sleep";
-import ConfigService from "../config/config.service";
 
 
 class CameraService {
@@ -34,11 +31,11 @@ class CameraService {
                 roles: true,
             },
             where: !adminRole || userRoles.includes(adminRole.value)
-                ? undefined 
+                ? undefined
                 : {
                     roles: {
                         some: {
-                            name: { in: userRoles }, 
+                            name: { in: userRoles },
                         },
                     },
                 },
@@ -48,17 +45,17 @@ class CameraService {
         const tags = await prisma.userTags.findMany({
             where: { id: { in: allTagIds } },
         });
-    
+
         const tagsMap = tags.reduce((acc, tag) => {
             acc[tag.id] = tag;
             return acc;
         }, {} as Record<string, typeof tags[0]>);
-    
+
         const camerasWithTags = cameras.map((camera) => ({
             ...camera,
             tags: camera.tagIds.map((tagId) => tagsMap[tagId]),
         }));
-    
+
         return camerasWithTags;
     }
 

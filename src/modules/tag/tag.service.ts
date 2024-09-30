@@ -1,7 +1,8 @@
 import { logger } from "../../utils/logger"
 import prisma from "../../utils/prisma"
 import CameraService from "../camera/camera.service"
-import { PutTagCameraSchema } from "./tag.schema"
+import { ErrorApp } from "../hooks/error.handler"
+import { PutTagSchema } from "./tag.schema"
 
 class TagService {
     private static _instance: TagService
@@ -19,33 +20,33 @@ class TagService {
         logger.debug(`TagsService initialized`)
     }
 
-    async upsertTag(tag: PutTagCameraSchema, userId: string) {
+    async upsertTag(tag: PutTagSchema, userId: string) {
         const { id, ...rest } = tag
 
-        const updatedTag = await this.prismaClient.upsert({
-            where: { value_userId: { value: tag.value, userId } },
-            update: {
-                userId,
-                ...rest,
-            },
-            create: {
-                userId,
-                ...rest,
-            },
+        const isTagExists = await this.prismaClient.findFirst({
+            where: {
+                value: tag.value,
+                userId: userId
+            }
         })
 
-        await Promise.all(
-            tag.cameraIds.map(async (cameraId) => {
-                await prisma.camera.update({
-                    where: { id: cameraId },
-                    data: {
-                        tagIds: { push: updatedTag.id },
-                    },
-                });
+        if (!isTagExists) {
+            await this.validateMaxTagsForUser(userId)
+            return await this.prismaClient.create({
+                data: {
+                    userId,
+                    ...rest,
+                }
             })
-        )
+        }
 
-        return updatedTag
+        return await this.prismaClient.update({
+            where: { value_userId: { value: tag.value, userId } },
+            data: {
+                ...rest
+            }
+        })
+
     }
 
     async getAllTags(userId: string) {
@@ -68,27 +69,10 @@ class TagService {
     async deleteTag(tagId: string, userId: string) {
 
         const tag = await this.prismaClient.findUniqueOrThrow({
-            where: { id: tagId },
-            select: { cameraIds: true },
+            where: { id: tagId, userId }
         })
 
-        await Promise.all(
-            tag.cameraIds.map(async (cameraId) => {
-                const camera = await prisma.camera.findUniqueOrThrow({
-                    where: { id: cameraId },
-                    select: { tagIds: true },
-                });
-
-                await prisma.camera.update({
-                    where: { id: cameraId },
-                    data: {
-                        tagIds: {
-                            set: camera.tagIds.filter((id) => id !== tagId),
-                        },
-                    },
-                })
-            })
-        )
+        this.removeTagFromCameras(tag.id)
 
         return await this.prismaClient.delete({
             where: {
@@ -96,6 +80,42 @@ class TagService {
                 userId,
             },
         });
+    }
+
+    private async validateMaxTagsForUser(userId: string) {
+        const maxTagsCount = 5
+        const tagsCount = await this.prismaClient.count({
+            where: {
+                userId
+            }
+        })
+        if (tagsCount >= maxTagsCount) throw new ErrorApp('validation', `Max tags for one user - ${maxTagsCount}`)
+        return true
+    }
+
+    private async removeTagFromCameras(tagId: string) {
+        const camerasWithTag = await prisma.camera.findMany({
+            where: {
+                tagIds: {
+                    has: tagId
+                }
+            }
+        })
+
+        const updateCameras = camerasWithTag.map((camera) => {
+            const updatedTagIds = camera.tagIds.filter((id) => id !== tagId)
+            return {
+                ...camera,
+                tagIds: updatedTagIds
+            }
+        })
+
+        updateCameras.map(async camera => {
+            await prisma.camera.update({
+                where: { id: camera.id },
+                data: { tagIds: camera.tagIds }
+            })
+        })
     }
 }
 

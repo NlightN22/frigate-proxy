@@ -17,7 +17,7 @@ export async function tagsRoutes(server: FastifyInstance) {
 
     server.put('/', {
         schema: {
-            body: $ref('putTagCamerasSchema'),
+            body: $ref('putTagSchema'),
             response: {
                 // 201: $ref("responseTagCamerasSchema") // TODO uncomment
             }

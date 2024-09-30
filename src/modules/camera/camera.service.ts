@@ -1,3 +1,4 @@
+import { Camera, FrigateHost } from "@prisma/client";
 import { logger } from "../../utils/logger";
 import prisma from "../../utils/prisma";
 import ConfigService from "../config/config.service";
@@ -94,7 +95,7 @@ class CameraService {
     }
 
     async getCamerasByIds(cameraIds: string[]) {
-        return await this.prismaClient.findMany({
+        const cameras = await this.prismaClient.findMany({
             where: {
                 id: { in: cameraIds }
             },
@@ -103,6 +104,19 @@ class CameraService {
                 roles: true
             }
         })
+
+        const tagIds = cameras.flatMap((camera) => camera.tagIds);
+
+        const tags = await prisma.userTags.findMany({
+            where: {
+                id: { in: tagIds },
+            },
+        });
+
+        return cameras.map((camera) => ({
+            ...camera,
+            tags: tags.filter((tag) => camera.tagIds.includes(tag.id)),
+        }));
     }
 
     async getCamera(id: string) {
@@ -115,13 +129,9 @@ class CameraService {
                 roles: true
             }
         })
-        const tags = await prisma.userTags.findMany({
-            where: { id: { in: camera.tagIds } },
-        })
-
         return {
             ...camera,
-            tags,
+            tags: await this.tagsToReply(camera),
         }
     }
 
@@ -137,7 +147,7 @@ class CameraService {
     }
 
     async getCameraByName(name: string) {
-        return await this.prismaClient.findFirst({
+        const camera = await this.prismaClient.findFirst({
             where: {
                 name: name
             },
@@ -146,11 +156,17 @@ class CameraService {
                 roles: true
             }
         })
+        if (camera) {
+            return {
+                ...camera,
+                tags: await this.tagsToReply(camera),
+            }
+        }
     }
 
     async editCamera(input: UpdateCameraSchema) {
         const { id, ...rest } = input
-        return await this.prismaClient.update({
+        const camera = await this.prismaClient.update({
             where: {
                 id: id
             },
@@ -160,6 +176,84 @@ class CameraService {
                 roles: true
             }
         })
+        return {
+            ...camera,
+            tags: await this.tagsToReply(camera),
+        }
+    }
+
+    async addTagToCamera(cameraId: string, tagId: string) {
+        prisma.userTags.findUniqueOrThrow({
+            where: {
+                id: tagId
+            }
+        })
+
+        const camera = await this.prismaClient.findUniqueOrThrow({
+            where: {
+                id: cameraId
+            }
+        })
+
+        if (!camera.tagIds.includes(tagId)) {
+            const updatedCamera = await this.prismaClient.update({
+                where: {
+                    id: cameraId
+                },
+                data: {
+                    tagIds: {
+                        push: tagId
+                    }
+                }
+            })
+
+            return {
+                ...updatedCamera,
+                tags: await this.tagsToReply(updatedCamera),
+            }
+        }
+
+        return {
+            ...camera,
+            tags: await this.tagsToReply(camera),
+        }
+    }
+
+    async deleteTagFromCamera(cameraId: string, tagId: string) {
+        prisma.userTags.findUniqueOrThrow({
+            where: {
+                id: tagId
+            }
+        })
+
+        const camera = await this.prismaClient.findUniqueOrThrow({
+            where: {
+                id: cameraId
+            },
+        })
+
+        if (camera.tagIds.includes(tagId)) {
+            const updatedCamera = await this.prismaClient.update({
+                where: {
+                    id: cameraId
+                },
+                data: {
+                    tagIds: {
+                        set: camera.tagIds.filter(id => id !== tagId)
+                    }
+                }
+            })
+
+            return {
+                ...updatedCamera,
+                tags: await this.tagsToReply(updatedCamera),
+            }
+        }
+
+        return {
+            ...camera,
+            tags: await this.tagsToReply(camera),
+        }
     }
 
     async deleteCamera(id: string) {
@@ -178,8 +272,6 @@ class CameraService {
                 roles: true
             }
         })
-
-        // TODO add cascade delete tags
     }
 
     async getCamerasByRole(roleId: string) {
@@ -228,6 +320,18 @@ class CameraService {
             });
         }));
     }
+
+    private async tagsToReply(camera: Camera) {
+        return await prisma.userTags.findMany({
+            where: { id: { in: camera.tagIds } },
+            select: {
+                id: true,
+                value: true
+            }
+        })
+
+    }
 }
+
 
 export default CameraService

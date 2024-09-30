@@ -1,23 +1,17 @@
 import { z } from "zod";
 import { buildJsonSchemas } from "fastify-zod";
-import { responseCameraCoreSchema } from "../camera/camera.core.schema";
 
 export const tagSchema = z.object({
     id: z.string(),
     value: z.string(),
 })
 
-export const tagsArraySchema = tagSchema.array()
-
-export const putTagCamerasSchema = z.object({
+export const putTagSchema = z.object({
     id: z.string().optional(),
     value: z.string(),
-    cameraIds: z.string().array()
 })
 
-const responseTagCamerasSchema = tagSchema.merge(z.object({
-    cameras: z.string().array()
-}))
+export const tagsArraySchema = tagSchema.array()
 
 export const getTagByIdSchema = {
     type: 'object',
@@ -29,16 +23,15 @@ export const getTagByIdSchema = {
     }
 }
 
-const responseTagsCamerasSchema = responseTagCamerasSchema.array()
 
-export type ResponseTagSchema = z.infer<typeof responseTagCamerasSchema>
-export type ResponseTagsSchema = z.infer<typeof responseTagsCamerasSchema>
-export type PutTagCameraSchema = z.infer<typeof putTagCamerasSchema>
+export type ResponseTagSchema = z.infer<typeof tagSchema>
+export type ResponseTagsSchema = z.infer<typeof tagsArraySchema>
+export type PutTagSchema = z.infer<typeof putTagSchema>
 
 export const { schemas: tagsSchemas, $ref } = buildJsonSchemas({
-    responseTagCamerasSchema,
-    responseTagsCamerasSchema,
-    putTagCamerasSchema,
+    responseTagSchema: tagSchema,
+    responseTagsSchema: tagsArraySchema,
+    putTagSchema,
 },
     { $id: 'tagsSchemas' }
 )

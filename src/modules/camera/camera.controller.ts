@@ -25,6 +25,18 @@ class CameraController {
         rep.code(201).send(frigateHost)
     })
 
+    putTagCameraHandler = withErrorHandler(async (req: FastifyRequest<{
+        Params: {
+            id: string,
+            tagId: string,
+        }
+    }>, rep: FastifyReply) => {
+        const { id, tagId } = req.params
+        const parsedId = z.string().parse(id)
+        const parsedTagId = z.string().parse(tagId)
+        return rep.code(201).send(await this.cameraService.addTagToCamera(parsedId, parsedTagId))
+    })
+
     getCamerasHandler = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
         const roles = req.user?.roles || []
         const servers = await this.cameraService.getAllCameras(roles)
@@ -66,5 +78,19 @@ class CameraController {
         const parsedId = z.string().parse(id)
         rep.send(await this.cameraService.deleteCamera(parsedId))
     })
+
+    deleteTagCameraHandler = withErrorHandler(async (req: FastifyRequest<{
+        Params: {
+            id: string,
+            tagId: string,
+        },
+    }>, rep: FastifyReply) => {
+        const { id, tagId } = req.params
+        const parsedId = z.string().parse(id)
+        const parsedTagId = z.string().parse(tagId)
+        return rep.send(await this.cameraService.deleteTagFromCamera(parsedId, parsedTagId))
+    })
+
+
 }
 export default CameraController

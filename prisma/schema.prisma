@@ -71,7 +71,6 @@ model UserTags {
   updateAt      DateTime     @updatedAt
   value         String       
   userId        String
-  cameraIds     String[]     @db.ObjectId
   @@unique([value, userId])
 }
 

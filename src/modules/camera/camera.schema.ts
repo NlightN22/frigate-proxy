@@ -15,6 +15,34 @@ export const getByHostIdSchema = {
     }
 }
 
+export const putByTagIdSchema = {
+    type: 'object',
+    properties: {
+        id: {
+            type: 'string',
+            description: 'Camera ID',
+        },
+        tagId: {
+            type: 'string',
+            description: 'Tag ID',
+        }
+    }
+}
+
+export const deleteByTagIdSchema = {
+    type: 'object',
+    properties: {
+        id: {
+            type: 'string',
+            description: 'Camera ID',
+        },
+        tagId: {
+            type: 'string',
+            description: 'Tag ID',
+        }
+    }
+}
+
 export const getByCameraIdSchema = {
     type: 'object',
     properties: {
@@ -24,7 +52,6 @@ export const getByCameraIdSchema = {
         },
     }
 }
-
 
 export const responseCameraSchema = responseCameraCoreSchema.merge(z.object({
     frigateHost: responseHostSchema.optional(),

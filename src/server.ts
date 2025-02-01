@@ -20,6 +20,7 @@ import cors from '@fastify/cors'
 import { configOIDPSchemas } from "./modules/config/oidp/config.oidp.schema"
 import { tagsRoutes } from "./modules/tag/tag.route"
 import { tagsSchemas } from "./modules/tag/tag.schema"
+import qs from 'qs';
 
 
 export interface User {
@@ -37,6 +38,7 @@ declare module 'fastify' {
 function buildServer() {
 
     const fastify = Fastify({
+        querystringParser: (str) => qs.parse(str),
     })
 
     fastify.register(cors, {

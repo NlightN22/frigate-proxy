@@ -64,20 +64,10 @@ export const getCamerasQuerySchema = {
         type: 'string',
         description: 'Search by frigate host id',
       },
-      tagId: {
-        oneOf: [
-          {
-            type: 'string',
-            description: 'Tag id as string',
-          },
-          {
-            type: 'array',
-            items: { type: 'string' },
-            description: 'Tag ids as array',
-            default: [],
-          },
-        ],
-        description: 'Search by tag id(s)',
+      tagIds: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Tag ids for filtering',
       },
       offset: {
         type: 'number',

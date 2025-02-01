@@ -28,7 +28,7 @@ class CameraService {
         userRoles: string[],
         name: string = '',
         frigateHostId: string = '',
-        tagIds: string | string[] = '',
+        tagIds: string[] = [],
         offset: number = -1,
         limit: number = -1,
     ) {
@@ -50,12 +50,7 @@ class CameraService {
 
         // Add filter by tag ids if provided
         if (tagIds) {
-            if (Array.isArray(tagIds) && tagIds.length > 0) {
-                // Filter cameras that have at least one of the provided tag ids
-                filters.push({ tagIds: { hasSome: tagIds } });
-            } else if (typeof tagIds === 'string' && tagIds.trim() !== '') {
-                filters.push({ tagIds: { has: tagIds } });
-            }
+            filters.push({ tagIds: { hasSome: tagIds } });
         }
 
         // Combine filters with AND operator if any filter exists

@@ -41,15 +41,15 @@ class CameraController {
         Querystring: {
             name?: string;
             frigateHostId?: string;
-            tagId?: string | string[];
+            tagIds?: string[];
             offset?: number;
             limit?: number;
         }
     }>, rep: FastifyReply) => {
-        const { name, frigateHostId, tagId, offset, limit } = req.query;
+        const { name, frigateHostId, tagIds, offset, limit } = req.query;
 
         const roles = req.user?.roles || []
-        const cameras = await this.cameraService.getAllCameras(roles, name, frigateHostId, tagId, offset, limit)
+        const cameras = await this.cameraService.getAllCameras(roles, name, frigateHostId, tagIds, offset, limit)
         rep.send(cameras)
     })
 

@@ -3,6 +3,7 @@
 # - $VERSION="0.8"
 # - rm dist -r -Force ; yarn build
 # - docker build --pull --rm -t oncharterliz/frigate-proxy:latest -t oncharterliz/frigate-proxy:$VERSION "."
+# - docker save -o ./release/frigate-proxy.$VERSION.tar oncharterliz/frigate-proxy:$VERSION
 # - docker image push oncharterliz/frigate-proxy:$VERSION ; docker image push oncharterliz/frigate-proxy:latest
 
 FROM node:23-alpine AS frigate-proxy

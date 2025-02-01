@@ -15,7 +15,8 @@ const responseExample = {
     url: 'https://hidden-reluctance.name/',
     frigateHost: {},
     roles: [],
-    config: null
+    config: null,
+    tags: [],
 }
 
 async function postCamera(fastify: FastifyInstance) {

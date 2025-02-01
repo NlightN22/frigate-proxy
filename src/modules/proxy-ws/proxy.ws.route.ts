@@ -1,8 +1,7 @@
-import { FastifyInstance } from 'fastify';
-import { proxyWsService } from './proxy.ws.service';
-import { proxyWsParamsSchema } from './proxy.ws.schema';
-import { validateJwt } from '../hooks/jwks-rsa.prehandler';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { logRequest, logResponse } from '../hooks/log.hooks';
+import { proxyWsParamsSchema } from './proxy.ws.schema';
+import { proxyWsService } from './proxy.ws.service';
 
 export async function proxyWsRoute(server: FastifyInstance) {
 
@@ -16,5 +15,9 @@ export async function proxyWsRoute(server: FastifyInstance) {
             params: proxyWsParamsSchema,
         },
         websocket: true,
-     }, proxyWsService);
+    }, (connection, req) => {
+        proxyWsService({ socket: connection }, 
+            req as FastifyRequest<{ Params: { hostName: string } }>)
+    })
+
 }

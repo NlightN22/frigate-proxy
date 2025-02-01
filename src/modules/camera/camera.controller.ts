@@ -77,7 +77,7 @@ class CameraController {
     }>, rep: FastifyReply) => {
         const { id } = req.params
         const parsedId = z.string().parse(id)
-        const camera = await this.cameraService.getCamerState(parsedId)
+        const camera = await this.cameraService.getCameraState(parsedId)
         rep.send(camera)
     })
 

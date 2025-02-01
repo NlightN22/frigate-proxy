@@ -15,13 +15,14 @@ class CameraService {
     }
 
     async createCamera(input: CreateCameraSchema) {
-        return await this.prismaClient.create({
+        const camera = await this.prismaClient.create({
             data: input,
             include: {
                 frigateHost: true,
                 roles: true
             }
         })
+        return await this.addTagsToCameraReply(camera)
     }
 
     async getAllCameras(
@@ -73,7 +74,7 @@ class CameraService {
             take: limit > -1 ? limit : undefined,     // Apply limit if valid
         });
 
-        return await this.tagsToCamerasReply(cameras)
+        return await this.addTagsToCamerasReply(cameras)
     }
 
     async getAllCamerasByHost(userRoles: string[], hostId: string) {
@@ -90,7 +91,7 @@ class CameraService {
             })
         }
 
-        return await this.prismaClient.findMany({
+        const cameras =  await this.prismaClient.findMany({
             where: {
                 frigateHostId: hostId,
                 roles: {
@@ -106,6 +107,8 @@ class CameraService {
                 roles: true
             }
         })
+
+        return await this.addTagsToCamerasReply(cameras)
     }
 
     async getCamerasByIds(cameraIds: string[]) {
@@ -118,7 +121,7 @@ class CameraService {
                 roles: true
             }
         })
-        return await this.tagsToCamerasReply(cameras)
+        return await this.addTagsToCamerasReply(cameras)
     }
 
     async getCamera(id: string) {
@@ -131,10 +134,10 @@ class CameraService {
                 roles: true
             }
         })
-        return await this.tagsToCameraReply(camera)
+        return await this.addTagsToCameraReply(camera)
     }
 
-    async getCamerState(id: string) {
+    async getCameraState(id: string) {
         return await this.prismaClient.findUniqueOrThrow({
             where: {
                 id: id
@@ -156,7 +159,7 @@ class CameraService {
             }
         })
         if (camera) {
-            return await this.tagsToCameraReply(camera)
+            return await this.addTagsToCameraReply(camera)
         }
     }
 
@@ -172,7 +175,7 @@ class CameraService {
                 roles: true
             }
         })
-        return await this.tagsToCameraReply(camera)
+        return await this.addTagsToCameraReply(camera)
     }
 
     async addTagToCamera(cameraId: string, tagId: string) {
@@ -200,9 +203,9 @@ class CameraService {
                 }
             })
 
-            return await this.tagsToCameraReply(updatedCamera)
+            return await this.addTagsToCameraReply(updatedCamera)
         }
-        return await this.tagsToCameraReply(camera)
+        return await this.addTagsToCameraReply(camera)
     }
 
     async deleteTagFromCamera(cameraId: string, tagId: string) {
@@ -230,10 +233,10 @@ class CameraService {
                 }
             })
 
-            return await this.tagsToCameraReply(updatedCamera)
+            return await this.addTagsToCameraReply(updatedCamera)
         }
 
-        return await this.tagsToCameraReply(camera)
+        return await this.addTagsToCameraReply(camera)
     }
 
     async deleteCamera(id: string) {
@@ -243,7 +246,7 @@ class CameraService {
             // host = await frigateHostsService.getFrigateHostOrNull(camera.frigateHostId)
         }
         if (host) throw new ErrorApp('validate', 'CameraService Cannot delete frigate camera. Host is exist')
-        return await this.prismaClient.delete({
+        const deletedCamera = await this.prismaClient.delete({
             where: {
                 id: id
             },
@@ -252,26 +255,29 @@ class CameraService {
                 roles: true
             }
         })
+        return await this.addTagsToCameraReply(deletedCamera)
     }
 
     async getCamerasByRole(roleId: string) {
-        return await this.prismaClient.findMany({
+        const cameras = await this.prismaClient.findMany({
             where: {
                 rolesIDs: {
                     has: roleId
                 }
             }
         })
+        return await this.addTagsToCamerasReply(cameras)
     }
 
     async getCamerasByRoles(rolesIds: string[]) {
-        return await this.prismaClient.findMany({
+        const cameras =  await this.prismaClient.findMany({
             where: {
                 rolesIDs: {
                     hasSome: rolesIds
                 }
             }
         })
+        return await this.addTagsToCamerasReply(cameras)
     }
 
     async deleteRoles(camerasId: string[], rolesId: string[]) {
@@ -301,7 +307,7 @@ class CameraService {
         }));
     }
 
-    private async tagsToCamerasReply(cameras: Camera[]) {
+    private async addTagsToCamerasReply(cameras: Camera[]) {
         const allTagIds = cameras.flatMap((camera) => camera.tagIds);
         const tags = await prisma.userTags.findMany({
             where: { id: { in: allTagIds } },
@@ -319,7 +325,7 @@ class CameraService {
         return camerasWithTags
     }
 
-    private async tagsToCameraReply(camera: Camera) {
+    private async addTagsToCameraReply(camera: Camera) {
         const tags = await prisma.userTags.findMany({
             where: { id: { in: camera.tagIds } },
             select: {

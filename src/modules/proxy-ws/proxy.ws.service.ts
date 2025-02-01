@@ -1,5 +1,4 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { SocketStream } from '@fastify/websocket';
 import { logger } from "../../utils/logger";
 import WebSocket from 'ws';
 import { ProxyWsParamsSchema, proxyWsParams } from "./proxy.ws.schema";
@@ -11,9 +10,10 @@ type Connections = {
     target: WebSocket | undefined
 }
 
-export async function proxyWsService(connection: SocketStream, req: FastifyRequest<{
-    Params: ProxyWsParamsSchema
-}>) {
+export async function proxyWsService(
+    connection: { socket: WebSocket },
+    req: FastifyRequest<{ Params: ProxyWsParamsSchema }>
+) {
     const source = connection.socket
     const connections: Connections = {
         source: source,

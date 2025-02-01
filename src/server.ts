@@ -21,13 +21,14 @@ import { configOIDPSchemas } from "./modules/config/oidp/config.oidp.schema"
 import { tagsRoutes } from "./modules/tag/tag.route"
 import { tagsSchemas } from "./modules/tag/tag.schema"
 import qs from 'qs';
+import rateLimit from '@fastify/rate-limit';
 
 
 export interface User {
     id: string,
     name: string,
     roles: string[],
-  }
+}
 
 declare module 'fastify' {
     export interface FastifyRequest {
@@ -43,7 +44,12 @@ function buildServer() {
 
     fastify.register(cors, {
         origin: "*",
-      })
+    })
+
+    fastify.register(rateLimit, {
+        max: 100,
+        timeWindow: '1 minute'
+    })
 
     fastify.get('/healthcheck', async function () {
         return { status: 'OK' }

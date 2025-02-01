@@ -26,6 +26,8 @@ services:
       DATABASE_URL: "mongodb://db-username:db-password@mongo:27017/db-name?retryWrites=true&w=majority&authSource=admin"
       ENCRYPTION_KEY: 'YOUR_SUPER_SECRET_KEY_FOR_ENCRYPTED_SETTINGS'
       LOG_LEVEL: debug
+      RATE_LIMIT: 100 # optional, requests rate limit per TIME_WINDOW, default 1000
+      TIME_WINDOW: 60000 # optional, requsts time window, default 60000
     ports:
       - 4000:4000
     depends_on:

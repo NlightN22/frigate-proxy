@@ -1,5 +1,5 @@
 import winston, { format } from 'winston';
-import { logLevel } from '../consts';
+import { envLogLevel } from '../consts';
 
 const { combine, timestamp, align, printf, colorize, } = format;
 // levels:
@@ -29,7 +29,7 @@ export const logger = ((process.env.NODE_ENV === 'production')) ?
     transports: [
       new winston.transports.File({ filename: 'error.log', level: 'error' }),
       new winston.transports.File({ filename: 'combined.log' }),
-      new winston.transports.Console({ level: logLevel, format: consoleLoggerFormat }),
+      new winston.transports.Console({ level: envLogLevel, format: consoleLoggerFormat }),
     ],
   })
   :

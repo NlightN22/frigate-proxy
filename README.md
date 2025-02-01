@@ -39,6 +39,8 @@ ENCRYPTION_KEY: "YOUR_SUPER_SECRET_KEY_FOR_ENCRYPTED_SETTINGS" # for saving and 
 ### optional:
 ```yml
 LOG_LEVEL: debug
+RATE_LIMIT: 100 # optional, requests rate limit per TIME_WINDOW, default 1000
+TIME_WINDOW: 60000 # optional, requsts time window, default 60000
 ```
 log levels: 
 * error: 0,

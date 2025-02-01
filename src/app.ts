@@ -1,5 +1,5 @@
 import { exec } from "child_process";
-import { hostURL } from "./consts"
+import { envHostURL } from "./consts"
 import buildServer from "./server"
 import { logger } from "./utils/logger"
 
@@ -10,11 +10,11 @@ async function main() {
     try {
 
         const fastifyOptions = {
-            port: Number(hostURL.port),
-            host: hostURL.hostname
+            port: Number(envHostURL.port),
+            host: envHostURL.hostname
         }
         await server.listen(fastifyOptions)
-        logger.info(`Server ready at ${hostURL.toString()}`)
+        logger.info(`Server ready at ${envHostURL.toString()}`)
     } catch (e) {
         logger.error(`main ${e.message}`)
         process.exit(1)

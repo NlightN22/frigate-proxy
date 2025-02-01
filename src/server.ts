@@ -1,28 +1,29 @@
-import Fastify from "fastify"
-import { frigateHostSchemas } from "./modules/frigate-hosts/frigate-hosts.schema"
+import cors from '@fastify/cors'
+import rateLimit from '@fastify/rate-limit'
 import { fastifySwagger } from "@fastify/swagger"
 import fastifySwaggerUi from "@fastify/swagger-ui"
-import { cameraSchemas } from "./modules/camera/camera.schema"
-import { proxySchemas } from "./modules/proxy/proxy.schema"
-import { proxyWsSchemas } from "./modules/proxy-ws/proxy.ws.schema"
-import { rolesSchemas } from "./modules/roles/roles.schema"
-import { selectLanguageHook } from "./modules/hooks/select.lang.prehandler"
-import { configSchemas } from "./modules/config/config.schema"
-import { cameraRoutes } from "./modules/camera/camera.route"
-import { frigateHostsRoutes } from "./modules/frigate-hosts/frigate-hosts.route"
-import { rolesRoutes } from "./modules/roles/roles.route"
-import { usersRoutes } from "./modules/users/users.route"
-import { configRoutes } from "./modules/config/config.route"
-import { proxyRoute } from "./modules/proxy/proxy.route"
 import websocket from '@fastify/websocket'
-import { proxyWsRoute } from "./modules/proxy-ws/proxy.ws.route"
-import cors from '@fastify/cors'
+import Fastify from "fastify"
+import qs from 'qs'
+import { envRateLimit, envTimeWindow } from "./consts"
+import { cameraRoutes } from "./modules/camera/camera.route"
+import { cameraSchemas } from "./modules/camera/camera.schema"
+import { configRoutes } from "./modules/config/config.route"
+import { configSchemas } from "./modules/config/config.schema"
 import { configOIDPSchemas } from "./modules/config/oidp/config.oidp.schema"
+import { frigateHostsRoutes } from "./modules/frigate-hosts/frigate-hosts.route"
+import { frigateHostSchemas } from "./modules/frigate-hosts/frigate-hosts.schema"
+import { selectLanguageHook } from "./modules/hooks/select.lang.prehandler"
+import { proxyWsRoute } from "./modules/proxy-ws/proxy.ws.route"
+import { proxyWsSchemas } from "./modules/proxy-ws/proxy.ws.schema"
+import { proxyRoute } from "./modules/proxy/proxy.route"
+import { proxySchemas } from "./modules/proxy/proxy.schema"
+import { rolesRoutes } from "./modules/roles/roles.route"
+import { rolesSchemas } from "./modules/roles/roles.schema"
 import { tagsRoutes } from "./modules/tag/tag.route"
 import { tagsSchemas } from "./modules/tag/tag.schema"
-import qs from 'qs';
-import rateLimit from '@fastify/rate-limit';
-import { error } from "console"
+import { usersRoutes } from "./modules/users/users.route"
+import { logger } from './utils/logger'
 
 
 export interface User {
@@ -49,9 +50,10 @@ function buildServer() {
     })
 
     fastify.register(rateLimit, {
-        max: 100,
-        timeWindow: '1 minute',
+        max: envRateLimit,
+        timeWindow: envTimeWindow,
         errorResponseBuilder(req, context) {
+            logger.debug(`Too many requests from ${req.ip} - ${context.after} / ${context.max}`)
             return {
                 statusCode: 429,
                 error: 'Too Many Requests',

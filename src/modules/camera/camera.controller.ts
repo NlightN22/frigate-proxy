@@ -37,10 +37,20 @@ class CameraController {
         return rep.code(201).send(await this.cameraService.addTagToCamera(parsedId, parsedTagId))
     })
 
-    getCamerasHandler = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
+    getCamerasHandler = withErrorHandler(async (req: FastifyRequest<{
+        Querystring: {
+            name?: string;
+            frigateHostId?: string;
+            tagId?: string | string[];
+            offset?: number;
+            limit?: number;
+        }
+    }>, rep: FastifyReply) => {
+        const { name, frigateHostId, tagId, offset, limit } = req.query;
+
         const roles = req.user?.roles || []
-        const servers = await this.cameraService.getAllCameras(roles)
-        rep.send(servers)
+        const cameras = await this.cameraService.getAllCameras(roles, name, frigateHostId, tagId, offset, limit)
+        rep.send(cameras)
     })
 
     getCamerasByHostHandler = withErrorHandler(async (req: FastifyRequest<{
@@ -49,8 +59,8 @@ class CameraController {
         const { id } = req.params
         const pasedId = z.string().parse(id)
         const roles = req.user?.roles || []
-        const servers = await this.cameraService.getAllCamerasByHost(roles, pasedId)
-        rep.send(servers)
+        const cameras = await this.cameraService.getAllCamerasByHost(roles, pasedId)
+        rep.send(cameras)
     })
 
     getCameraHandler = withErrorHandler(async (req: FastifyRequest<{
@@ -58,8 +68,8 @@ class CameraController {
     }>, rep: FastifyReply) => {
         const { id } = req.params
         const parsedId = z.string().parse(id)
-        const frigateHost = await this.cameraService.getCamera(parsedId)
-        rep.send(frigateHost)
+        const camera = await this.cameraService.getCamera(parsedId)
+        rep.send(camera)
     })
 
     getCameraStateHandler = withErrorHandler(async (req: FastifyRequest<{
@@ -67,8 +77,8 @@ class CameraController {
     }>, rep: FastifyReply) => {
         const { id } = req.params
         const parsedId = z.string().parse(id)
-        const frigateHost = await this.cameraService.getCamerState(parsedId)
-        rep.send(frigateHost)
+        const camera = await this.cameraService.getCamerState(parsedId)
+        rep.send(camera)
     })
 
     deleteCameraHandler = withErrorHandler(async (req: FastifyRequest<{

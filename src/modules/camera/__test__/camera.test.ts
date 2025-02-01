@@ -1,11 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { test } from 'tap';
-import { ImportMock } from 'ts-mock-imports';
 import { mockServices } from '../../../__test__/mocked.services';
 import { testCameraSchema } from '../../../__test__/test.schemas';
-import { httpResponseTest, cleanAfterTest, removeProperty } from '../../../__test__/test.utils';
+import { cleanAfterTest, httpResponseTest, removeProperty } from '../../../__test__/test.utils';
 import buildServer from '../../../server';
-import * as cameraService from '../camera.service';
 
 
 const responseExample = {

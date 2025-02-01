@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { $ref, deleteByTagIdSchema, getByCameraIdSchema, getByHostIdSchema, putByTagIdSchema } from "./camera.schema";
+import { $ref, deleteByTagIdSchema, getByCameraIdSchema, getByHostIdSchema, getCamerasQuerySchema, putByTagIdSchema } from "./camera.schema";
 import CameraController from "./camera.controller";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { logRequest, logResponse } from "../hooks/log.hooks";
@@ -35,7 +35,7 @@ export async function cameraRoutes(server: FastifyInstance) {
     server.get('/', {
         preValidation: [validateJwt],
         schema: {
-            querystring: $ref('getCamerasQuerySchema'),
+            querystring: getCamerasQuerySchema,
             response: {
                 200: $ref("responseCamerasSchema")
             }

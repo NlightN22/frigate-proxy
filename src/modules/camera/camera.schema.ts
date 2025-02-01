@@ -53,6 +53,46 @@ export const getByCameraIdSchema = {
     }
 }
 
+export const getCamerasQuerySchema = {
+    type: 'object',
+    properties: {
+      name: {
+        type: 'string',
+        description: 'Search by camera name',
+      },
+      frigateHostId: {
+        type: 'string',
+        description: 'Search by frigate host id',
+      },
+      tagId: {
+        oneOf: [
+          {
+            type: 'string',
+            description: 'Tag id as string',
+          },
+          {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Tag ids as array',
+            default: [],
+          },
+        ],
+        description: 'Search by tag id(s)',
+      },
+      offset: {
+        type: 'number',
+        minimum: 1,
+        description: 'Pagination offset',
+      },
+      limit: {
+        type: 'number',
+        minimum: 1,
+        description: 'Pagination limit',
+      },
+    },
+    additionalProperties: false,
+  };
+
 export const responseCameraSchema = responseCameraCoreSchema.merge(z.object({
     frigateHost: responseHostSchema.optional(),
     roles: responseRoleSchema.array().optional(),
@@ -81,14 +121,6 @@ export const updateCameraSchema = z.object({
 
 
 
-export const getCamerasQuerySchema = z.object({
-    name: z.string().optional(), // search by camera name
-    frigateHostId: z.string().optional(), // search by frigate host id
-    tagId: z.union([z.string(), z.array(z.string())]).optional(), // search by tag id(s)
-    offset: z.number().min(1).optional(),
-    limit: z.number().min(1).optional(),
-})
-
 export type CreateCameraSchema = z.infer<typeof createCameraSchema>
 export type ResponseCameraSchema = z.infer<typeof responseCameraSchema>
 export type ResponseCamerasSchema = z.infer<typeof responseCamerasSchema>
@@ -100,6 +132,5 @@ export const { schemas: cameraSchemas, $ref } = buildJsonSchemas({
     responseCameraStateSchema,
     responseCamerasSchema,
     updateCameraSchema,
-    getCamerasQuerySchema,
 },
     { $id: 'cameraSchemas' })

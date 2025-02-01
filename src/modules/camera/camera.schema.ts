@@ -80,6 +80,15 @@ export const updateCameraSchema = z.object({
     { params: { i18n: "HostOrUrlExist" } })
 
 
+
+export const getCamerasQuerySchema = z.object({
+    name: z.string().optional(), // search by camera name
+    frigateHostId: z.string().optional(), // search by frigate host id
+    tagId: z.union([z.string(), z.array(z.string())]).optional(), // search by tag id(s)
+    offset: z.number().min(1).optional(),
+    limit: z.number().min(1).optional(),
+})
+
 export type CreateCameraSchema = z.infer<typeof createCameraSchema>
 export type ResponseCameraSchema = z.infer<typeof responseCameraSchema>
 export type ResponseCamerasSchema = z.infer<typeof responseCamerasSchema>
@@ -91,5 +100,6 @@ export const { schemas: cameraSchemas, $ref } = buildJsonSchemas({
     responseCameraStateSchema,
     responseCamerasSchema,
     updateCameraSchema,
+    getCamerasQuerySchema,
 },
     { $id: 'cameraSchemas' })

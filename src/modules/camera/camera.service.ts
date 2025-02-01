@@ -24,40 +24,60 @@ class CameraService {
         })
     }
 
-    async getAllCameras(userRoles: string[]) {
+    async getAllCameras(
+        userRoles: string[],
+        name: string = '',
+        frigateHostId: string = '',
+        tagIds: string | string[] = '',
+        offset: number = -1,
+        limit: number = -1,
+    ) {
         const adminRole = await this.configService.getAdminRole()
+
+        // Build an array of filter conditions
+        const filters: any[] = [];
+
+
+        // Add filter by camera name if provided
+        if (name.trim() !== '') {
+            filters.push({ name: { contains: name, mode: 'insensitive' } });
+        }
+
+        // Add filter by frigate host id if provided
+        if (frigateHostId.trim() !== '') {
+            filters.push({ frigateHostId: frigateHostId });
+        }
+
+        // Add filter by tag ids if provided
+        if (tagIds) {
+            if (Array.isArray(tagIds) && tagIds.length > 0) {
+                // Filter cameras that have at least one of the provided tag ids
+                filters.push({ tagIds: { hasSome: tagIds } });
+            } else if (typeof tagIds === 'string' && tagIds.trim() !== '') {
+                filters.push({ tagIds: { has: tagIds } });
+            }
+        }
+
+        // Combine filters with AND operator if any filter exists
+        const where = filters.length > 0 ? { AND: filters } : undefined;
+
+        // Add role filter if user is not admin
+        if (!adminRole || !userRoles.includes(adminRole.value)) {
+            filters.push({ roles: { some: { name: { in: userRoles } } } });
+        }
+
+        // Fetch cameras with filters and pagination options
         const cameras = await this.prismaClient.findMany({
             include: {
                 frigateHost: true,
                 roles: true,
             },
-            where: !adminRole || userRoles.includes(adminRole.value)
-                ? undefined
-                : {
-                    roles: {
-                        some: {
-                            name: { in: userRoles },
-                        },
-                    },
-                },
-        });
-        const allTagIds = cameras.flatMap((camera) => camera.tagIds);
-
-        const tags = await prisma.userTags.findMany({
-            where: { id: { in: allTagIds } },
+            where: where,
+            skip: offset > -1 ? offset : undefined,  // Apply offset if valid
+            take: limit > -1 ? limit : undefined,     // Apply limit if valid
         });
 
-        const tagsMap = tags.reduce((acc, tag) => {
-            acc[tag.id] = tag;
-            return acc;
-        }, {} as Record<string, typeof tags[0]>);
-
-        const camerasWithTags = cameras.map((camera) => ({
-            ...camera,
-            tags: camera.tagIds.map((tagId) => tagsMap[tagId]),
-        }));
-
-        return camerasWithTags;
+        return await this.tagsToCamerasReply(cameras)
     }
 
     async getAllCamerasByHost(userRoles: string[], hostId: string) {
@@ -73,8 +93,6 @@ class CameraService {
                 }
             })
         }
-
-
 
         return await this.prismaClient.findMany({
             where: {
@@ -104,19 +122,7 @@ class CameraService {
                 roles: true
             }
         })
-
-        const tagIds = cameras.flatMap((camera) => camera.tagIds);
-
-        const tags = await prisma.userTags.findMany({
-            where: {
-                id: { in: tagIds },
-            },
-        });
-
-        return cameras.map((camera) => ({
-            ...camera,
-            tags: tags.filter((tag) => camera.tagIds.includes(tag.id)),
-        }));
+        return await this.tagsToCamerasReply(cameras)
     }
 
     async getCamera(id: string) {
@@ -129,10 +135,7 @@ class CameraService {
                 roles: true
             }
         })
-        return {
-            ...camera,
-            tags: await this.tagsToReply(camera),
-        }
+        return await this.tagsToCameraReply(camera)
     }
 
     async getCamerState(id: string) {
@@ -157,10 +160,7 @@ class CameraService {
             }
         })
         if (camera) {
-            return {
-                ...camera,
-                tags: await this.tagsToReply(camera),
-            }
+            return await this.tagsToCameraReply(camera)
         }
     }
 
@@ -176,10 +176,7 @@ class CameraService {
                 roles: true
             }
         })
-        return {
-            ...camera,
-            tags: await this.tagsToReply(camera),
-        }
+        return await this.tagsToCameraReply(camera)
     }
 
     async addTagToCamera(cameraId: string, tagId: string) {
@@ -207,16 +204,9 @@ class CameraService {
                 }
             })
 
-            return {
-                ...updatedCamera,
-                tags: await this.tagsToReply(updatedCamera),
-            }
+            return await this.tagsToCameraReply(updatedCamera)
         }
-
-        return {
-            ...camera,
-            tags: await this.tagsToReply(camera),
-        }
+        return await this.tagsToCameraReply(camera)
     }
 
     async deleteTagFromCamera(cameraId: string, tagId: string) {
@@ -244,16 +234,10 @@ class CameraService {
                 }
             })
 
-            return {
-                ...updatedCamera,
-                tags: await this.tagsToReply(updatedCamera),
-            }
+            return await this.tagsToCameraReply(updatedCamera)
         }
 
-        return {
-            ...camera,
-            tags: await this.tagsToReply(camera),
-        }
+        return await this.tagsToCameraReply(camera)
     }
 
     async deleteCamera(id: string) {
@@ -321,14 +305,36 @@ class CameraService {
         }));
     }
 
-    private async tagsToReply(camera: Camera) {
-        return await prisma.userTags.findMany({
+    private async tagsToCamerasReply(cameras: Camera[]) {
+        const allTagIds = cameras.flatMap((camera) => camera.tagIds);
+        const tags = await prisma.userTags.findMany({
+            where: { id: { in: allTagIds } },
+        });
+
+        const tagsMap = tags.reduce((acc, tag) => {
+            acc[tag.id] = tag;
+            return acc;
+        }, {} as Record<string, typeof tags[0]>);
+
+        const camerasWithTags = cameras.map((camera) => ({
+            ...camera,
+            tags: camera.tagIds.map((tagId) => tagsMap[tagId]),
+        }));
+        return camerasWithTags
+    }
+
+    private async tagsToCameraReply(camera: Camera) {
+        const tags = await prisma.userTags.findMany({
             where: { id: { in: camera.tagIds } },
             select: {
                 id: true,
                 value: true
             }
         })
+        return {
+            ...camera,
+            tags: tags,
+        }
 
     }
 }

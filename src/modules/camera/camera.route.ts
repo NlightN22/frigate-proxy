@@ -35,6 +35,7 @@ export async function cameraRoutes(server: FastifyInstance) {
     server.get('/', {
         preValidation: [validateJwt],
         schema: {
+            querystring: $ref('getCamerasQuerySchema'),
             response: {
                 200: $ref("responseCamerasSchema")
             }

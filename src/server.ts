@@ -22,6 +22,7 @@ import { tagsRoutes } from "./modules/tag/tag.route"
 import { tagsSchemas } from "./modules/tag/tag.schema"
 import qs from 'qs';
 import rateLimit from '@fastify/rate-limit';
+import { error } from "console"
 
 
 export interface User {
@@ -40,6 +41,7 @@ function buildServer() {
 
     const fastify = Fastify({
         querystringParser: (str) => qs.parse(str),
+        trustProxy: true,
     })
 
     fastify.register(cors, {
@@ -48,7 +50,16 @@ function buildServer() {
 
     fastify.register(rateLimit, {
         max: 100,
-        timeWindow: '1 minute'
+        timeWindow: '1 minute',
+        errorResponseBuilder(req, context) {
+            return {
+                statusCode: 429,
+                error: 'Too Many Requests',
+                message: `I only allow ${context.max} requests per ${context.after} to this Website. Try again soon.`,
+                date: Date.now(),
+                expiresIn: context.ttl
+            }
+        },
     })
 
     fastify.get('/healthcheck', async function () {
@@ -96,7 +107,7 @@ function buildServer() {
     fastify.register(configRoutes, { prefix: 'apiv1/config' })
     fastify.register(proxyRoute, { prefix: 'proxy' })
     fastify.register(websocket)
-    fastify.register(proxyWsRoute, { prefix: 'proxy-ws' })
+    fastify.register(proxyWsRoute, { prefix: 'proxy-ws', config: { rateLimit: false } })
 
     return fastify
 }

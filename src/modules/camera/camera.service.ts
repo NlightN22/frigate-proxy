@@ -49,7 +49,8 @@ class CameraService {
         }
 
         // Add filter by tag ids if provided
-        if (tagIds) {
+        if (tagIds && tagIds.length > 0) {
+            // Filter cameras that have at least one of the provided tag ids
             filters.push({ tagIds: { hasSome: tagIds } });
         }
 

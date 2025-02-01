@@ -71,7 +71,7 @@ export const getCamerasQuerySchema = {
       },
       offset: {
         type: 'number',
-        minimum: 1,
+        minimum: 0,
         description: 'Pagination offset',
       },
       limit: {

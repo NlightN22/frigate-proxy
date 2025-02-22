@@ -17,32 +17,32 @@ export async function configRoutes(server: FastifyInstance) {
         },
     }, getAdminController)
 
-    server.register(async function (protectedRoutes) {
-        protectedRoutes.decorateRequest('user')
-        protectedRoutes.addHook('preValidation', async (request, reply) => {
+    server.register(async function (adminRoutes) {
+        adminRoutes.decorateRequest('user')
+        adminRoutes.addHook('preValidation', async (request, reply) => {
             await validateJwt(request, reply);
             await validateAdminRole(request, reply);
         })
     
-        protectedRoutes.get('/', {
+        adminRoutes.get('/', {
             schema: {
                 response: { 200: $ref('responseConfigsSchema')},
             },
         }, getConfigsController)
     
-        protectedRoutes.get('/:key', {
+        adminRoutes.get('/:key', {
             schema: {
                 params: paramConfigSchema,
                 response:{ 200: $ref('responseConfigSchema')}
             }
         }, getConfigController)
-        protectedRoutes.put('/:key', {
+        adminRoutes.put('/:key', {
             schema: {
                 params: paramConfigSchema,
                 response:{ 200: $ref('responseConfigSchema')}
             }
         }, putConfigController)
-        protectedRoutes.put('/', {
+        adminRoutes.put('/', {
             schema: {
                 body: $ref('putConfigsSchema'),
                 response: {
@@ -51,7 +51,7 @@ export async function configRoutes(server: FastifyInstance) {
             }
         }, putConfigsController)
 
-        protectedRoutes.register(async function (oidpRoutes) {
+        adminRoutes.register(async function (oidpRoutes) {
             await oidpRoutes.register(configOIDPRoutes, { prefix: '/oidp' })
         })
     })

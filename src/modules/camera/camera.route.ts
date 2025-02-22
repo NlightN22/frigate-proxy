@@ -3,6 +3,7 @@ import { $ref, deleteByTagIdSchema, getByCameraIdSchema, getByHostIdSchema, getC
 import CameraController from "./camera.controller";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { logRequest, logResponse } from "../hooks/log.hooks";
+import { validateAdminRole } from "../hooks/roles.prehandler";
 
 export async function cameraRoutes(server: FastifyInstance) {
     const controller = new CameraController()
@@ -21,88 +22,95 @@ export async function cameraRoutes(server: FastifyInstance) {
     }, controller.getCameraHandler)
 
     // Routes for authenticated users
-    server.decorateRequest('user')
-    server.post('/', {
-        preValidation: [validateJwt],
-        schema: {
-            body: $ref('createCameraSchema'),
-            response: {
-                201: $ref("responseCameraSchema")
+
+    server.register(async function (userRoutes) {
+        userRoutes.decorateRequest('user')
+        userRoutes.addHook('preValidation', async (request, reply) => {
+            await validateJwt(request, reply);
+        })
+
+        userRoutes.post('/', {
+            schema: {
+                body: $ref('createCameraSchema'),
+                response: {
+                    201: $ref("responseCameraSchema")
+                }
             }
-        }
-    }, controller.createCameraHandler)
+        }, controller.createCameraHandler)
 
-    server.get('/', {
-        preValidation: [validateJwt],
-        schema: {
-            querystring: getCamerasQuerySchema,
-            response: {
-                200: $ref("responseCamerasSchema")
+        userRoutes.get('/', {
+            schema: {
+                querystring: getCamerasQuerySchema,
+                response: {
+                    200: $ref("responseCamerasSchema")
+                }
             }
-        }
-    }, controller.getCamerasHandler)
+        }, controller.getCamerasHandler)
 
-    server.get('/host/:id', {
-        preValidation: [validateJwt],
-        schema: {
-            params: getByHostIdSchema,
-            querystring: getCamerasByHosQuerySchema,
-            response: {
-                200: $ref("responseCamerasSchema")
+        userRoutes.get('/host/:id', {
+            schema: {
+                params: getByHostIdSchema,
+                querystring: getCamerasByHosQuerySchema,
+                response: {
+                    200: $ref("responseCamerasSchema")
+                }
             }
-        }
-    }, controller.getCamerasByHostHandler)
+        }, controller.getCamerasByHostHandler)
 
-
-
-    server.get('/:id', {
-        preValidation: [validateJwt],
-        schema: {
-            params: getByCameraIdSchema,
-            response: {
-                200: $ref("responseCameraSchema")
+        userRoutes.get('/:id', {
+            schema: {
+                params: getByCameraIdSchema,
+                response: {
+                    200: $ref("responseCameraSchema")
+                }
             }
-        }
-    }, controller.getCameraHandler)
+        }, controller.getCameraHandler)
 
-    server.put('/', {
-        preValidation: [validateJwt],
-        schema: {
-            body: $ref('updateCameraSchema'),
-            response: {
-                201: $ref("responseCameraSchema")
+    })
+
+    server.register(async function (adminRoutes) {
+        adminRoutes.decorateRequest('user')
+        adminRoutes.addHook('preValidation', async (request, reply) => {
+            await validateJwt(request, reply);
+            await validateAdminRole(request, reply);
+        })
+
+        adminRoutes.put('/', {
+            schema: {
+                body: $ref('updateCameraSchema'),
+                response: {
+                    201: $ref("responseCameraSchema")
+                }
             }
-        }
-    }, controller.putCameraHandler)
+        }, controller.putCameraHandler)
 
-    server.put('/:id/tag/:tagId', {
-        preValidation: [validateJwt],
-        schema: {
-            params: putByTagIdSchema,
-            // response: {
-            //     200: $ref("responseCameraSchema")
-            // }
-        }
-    }, controller.putTagCameraHandler)
-
-    server.delete('/:id', {
-        preValidation: [validateJwt],
-        schema: {
-            params: getByCameraIdSchema,
-            response: {
-                200: $ref("responseCameraSchema")
+        adminRoutes.put('/:id/tag/:tagId', {
+            schema: {
+                params: putByTagIdSchema,
+                // response: {
+                //     200: $ref("responseCameraSchema")
+                // }
             }
-        }
-    }, controller.deleteCameraHandler)
+        }, controller.putTagCameraHandler)
+    
+        adminRoutes.delete('/:id', {
+            schema: {
+                params: getByCameraIdSchema,
+                response: {
+                    200: $ref("responseCameraSchema")
+                }
+            }
+        }, controller.deleteCameraHandler)
+    
+    
+        adminRoutes.delete('/:id/tag/:tagId', {
+            schema: {
+                params: deleteByTagIdSchema,
+                // response: {
+                //     200: $ref("responseCameraSchema")
+                // }
+            }
+        }, controller.deleteTagCameraHandler)
 
-
-    server.delete('/:id/tag/:tagId', {
-        preValidation: [validateJwt],
-        schema: {
-            params: deleteByTagIdSchema,
-            // response: {
-            //     200: $ref("responseCameraSchema")
-            // }
-        }
-    }, controller.deleteTagCameraHandler)
+    })
 }

@@ -54,12 +54,17 @@ class CameraController {
     })
 
     getCamerasByHostHandler = withErrorHandler(async (req: FastifyRequest<{
-        Params: { id: string }
+        Params: { id: string },
+        Querystring: {
+            offset?: number;
+            limit?: number;
+        }
     }>, rep: FastifyReply) => {
         const { id } = req.params
+        const { offset, limit } = req.query;
         const pasedId = z.string().parse(id)
         const roles = req.user?.roles || []
-        const cameras = await this.cameraService.getAllCamerasByHost(roles, pasedId)
+        const cameras = await this.cameraService.getAllCameras(roles, '', pasedId, [], offset, limit)
         rep.send(cameras)
     })
 

@@ -38,7 +38,6 @@ class CameraService {
         // Build an array of filter conditions
         const filters: any[] = [];
 
-
         // Add filter by camera name if provided
         if (name.trim() !== '') {
             filters.push({ name: { contains: name, mode: 'insensitive' } });
@@ -73,40 +72,6 @@ class CameraService {
             skip: offset > -1 ? offset : undefined,  // Apply offset if valid
             take: limit > -1 ? limit : undefined,     // Apply limit if valid
         });
-
-        return await this.addTagsToCamerasReply(cameras)
-    }
-
-    async getAllCamerasByHost(userRoles: string[], hostId: string) {
-        const adminRole = await this.configService.getAdminRole()
-        if (!adminRole || userRoles.find(role => role === adminRole.value)) {
-            return await this.prismaClient.findMany({
-                where: {
-                    frigateHostId: hostId
-                },
-                include: {
-                    frigateHost: true,
-                    roles: true
-                }
-            })
-        }
-
-        const cameras =  await this.prismaClient.findMany({
-            where: {
-                frigateHostId: hostId,
-                roles: {
-                    some: {
-                        name: {
-                            in: userRoles
-                        }
-                    }
-                }
-            },
-            include: {
-                frigateHost: true,
-                roles: true
-            }
-        })
 
         return await this.addTagsToCamerasReply(cameras)
     }

@@ -56,32 +56,50 @@ export const getByCameraIdSchema = {
 export const getCamerasQuerySchema = {
     type: 'object',
     properties: {
-      name: {
-        type: 'string',
-        description: 'Search by camera name',
-      },
-      frigateHostId: {
-        type: 'string',
-        description: 'Search by frigate host id',
-      },
-      tagIds: {
-        type: 'array',
-        items: { type: 'string' },
-        description: 'Tag ids for filtering',
-      },
-      offset: {
-        type: 'number',
-        minimum: 0,
-        description: 'Pagination offset',
-      },
-      limit: {
-        type: 'number',
-        minimum: 1,
-        description: 'Pagination limit',
-      },
+        name: {
+            type: 'string',
+            description: 'Search by camera name',
+        },
+        frigateHostId: {
+            type: 'string',
+            description: 'Search by frigate host id',
+        },
+        tagIds: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Tag ids for filtering',
+        },
+        offset: {
+            type: 'number',
+            minimum: 0,
+            description: 'Pagination offset',
+        },
+        limit: {
+            type: 'number',
+            minimum: 1,
+            description: 'Pagination limit',
+        },
     },
     additionalProperties: false,
-  };
+};
+
+
+export const getCamerasByHosQuerySchema = {
+    type: 'object',
+    properties: {
+        offset: {
+            type: 'number',
+            minimum: 0,
+            description: 'Pagination offset',
+        },
+        limit: {
+            type: 'number',
+            minimum: 1,
+            description: 'Pagination limit',
+        },
+    },
+    additionalProperties: false,
+};
 
 export const responseCameraSchema = responseCameraCoreSchema.merge(z.object({
     frigateHost: responseHostSchema.optional(),

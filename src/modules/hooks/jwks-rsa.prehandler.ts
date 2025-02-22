@@ -6,7 +6,7 @@ import { logger } from "../../utils/logger"
 import ConfigOIDPService from "../config/oidp/config.oidp.service"
 import { OIDPUrls } from "../oidp/oidp.urls"
 import { ErrorApp } from "./error.handler"
-import { TokenUser } from "./token.shchema"
+import { TokenUser } from "./token.types"
 
 const configOIDPService = ConfigOIDPService.getInstance()
 
@@ -87,7 +87,7 @@ export async function validateJwt(request: FastifyRequest, reply: FastifyReply) 
         return
     }
 
-    // logger.debug(`token: ${JSON.stringify(token)}`)
+    logger.silly(`token: ${JSON.stringify(token)}`)
     try {
         const decoded: TokenUser = await new Promise((resolve, reject) => {
             jwt.verify(token, getKey, {
@@ -106,7 +106,7 @@ export async function validateJwt(request: FastifyRequest, reply: FastifyReply) 
             throw new Error('validateJwt decoded token does not exists')
         }
 
-        // logger.debug(`decoded: ${JSON.stringify(decoded)}`)
+        logger.silly(`decoded: ${JSON.stringify(decoded)}`)
         request.user = {
             id: decoded.sub,
             name: decoded.name,

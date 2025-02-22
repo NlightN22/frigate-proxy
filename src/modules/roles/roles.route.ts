@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify"
 import { $ref, getRoleByIdSchema } from "./roles.schema"
 import RolesController from "./roles.controller"
 import { validateJwt } from "../hooks/jwks-rsa.prehandler"
-import { validateAdminRole } from "../hooks/roles.prehandler"
+import { validateAdminRole } from "../hooks/validate.admin.role"
 import { logRequest, logResponse } from "../hooks/log.hooks"
 
 export async function rolesRoutes(server: FastifyInstance) {

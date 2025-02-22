@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { logRequest, logResponse } from "../hooks/log.hooks";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
-import { validateAdminRole } from "../hooks/roles.prehandler";
+import { validateAdminRole } from "../hooks/validate.admin.role";
 import FrigateHostController from "./frigate-hosts.controller";
 import { $ref, getHostByIdSchema, getHostByNameSchema } from "./frigate-hosts.schema";
 

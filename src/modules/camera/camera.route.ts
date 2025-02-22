@@ -3,7 +3,7 @@ import { $ref, deleteByTagIdSchema, getByCameraIdSchema, getByHostIdSchema, getC
 import CameraController from "./camera.controller";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { logRequest, logResponse } from "../hooks/log.hooks";
-import { validateAdminRole } from "../hooks/roles.prehandler";
+import { validateAdminRole } from "../hooks/validate.admin.role";
 
 export async function cameraRoutes(server: FastifyInstance) {
     const controller = new CameraController()
@@ -22,7 +22,6 @@ export async function cameraRoutes(server: FastifyInstance) {
     }, controller.getCameraHandler)
 
     // Routes for authenticated users
-
     server.register(async function (userRoutes) {
         userRoutes.decorateRequest('user')
         userRoutes.addHook('preValidation', async (request, reply) => {
@@ -87,9 +86,6 @@ export async function cameraRoutes(server: FastifyInstance) {
         adminRoutes.put('/:id/tag/:tagId', {
             schema: {
                 params: putByTagIdSchema,
-                // response: {
-                //     200: $ref("responseCameraSchema")
-                // }
             }
         }, controller.putTagCameraHandler)
     
@@ -106,9 +102,6 @@ export async function cameraRoutes(server: FastifyInstance) {
         adminRoutes.delete('/:id/tag/:tagId', {
             schema: {
                 params: deleteByTagIdSchema,
-                // response: {
-                //     200: $ref("responseCameraSchema")
-                // }
             }
         }, controller.deleteTagCameraHandler)
 

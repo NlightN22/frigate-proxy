@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { getConfigsController, getConfigController, putConfigController, putConfigsController, getAdminController } from "./confg.controller";
 import { $ref, paramConfigSchema } from "./config.schema";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
-import { validateAdminRole } from "../hooks/roles.prehandler";
+import { validateAdminRole } from "../hooks/validate.admin.role";
 import { logRequest, logResponse } from "../hooks/log.hooks";
 import { configOIDPRoutes } from "./oidp/config.oidp.route";
 

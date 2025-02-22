@@ -4,14 +4,10 @@ import ConfigService from "../config/config.service";
 import ConfigOIDPService from "../config/oidp/config.oidp.service";
 import { ErrorApp } from "./error.handler";
 
-export async function validateRole(request: FastifyRequest, reply: FastifyReply, allowedRoles: string[]) {
+export async function validateAdminRole(request: FastifyRequest, reply: FastifyReply) {
     const configService = ConfigService.getInstance()
     const configOIDPService = ConfigOIDPService.getInstance()
 
-    if (!allowedRoles || allowedRoles.length<1){
-        logger.warn('Not set allowed roles to route. Pass')
-        return
-    }
     const oidpConfig = await configOIDPService.getDecryptedOIDPConfig()
     if (!oidpConfig) {
         logger.warn('OpenID provider not set at config. Pass')
@@ -29,12 +25,6 @@ export async function validateRole(request: FastifyRequest, reply: FastifyReply,
         logger.debug(`Admin role. Pass`)
         return
     }
-    const allowedRole = allowedRoles.some((role) => roles.includes(role))
-    if (!allowedRole) reply.code(403).send({ error: 'Forbidden' })
-    logger.debug(`allowedRole ${allowedRole}`)
-}
-
-export async function isAdminRolePrehandler(request: FastifyRequest, reply: FastifyReply) {
-    const allowedRoles = ['admin',]
-    await validateRole(request, reply, allowedRoles)
+    reply.code(403).send({ error: 'Forbidden' })
+    logger.debug(`not admin role: ${adminRole}`)
 }

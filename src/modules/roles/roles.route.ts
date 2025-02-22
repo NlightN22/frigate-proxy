@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify"
 import { $ref, getRoleByIdSchema } from "./roles.schema"
 import RolesController from "./roles.controller"
 import { validateJwt } from "../hooks/jwks-rsa.prehandler"
-import { validateRole } from "../hooks/roles.prehandler"
+import { validateAdminRole } from "../hooks/roles.prehandler"
 import { logRequest, logResponse } from "../hooks/log.hooks"
 
 export async function rolesRoutes(server: FastifyInstance) {
@@ -26,7 +26,7 @@ export async function rolesRoutes(server: FastifyInstance) {
         },
         preValidation: async (request, reply) => {
             const allowedRoles = ['admin']
-            await validateRole(request, reply, allowedRoles);
+            await validateAdminRole(request, reply, allowedRoles);
         }
     }, controller.updateRoleCamerasHandler)
 
@@ -59,7 +59,7 @@ export async function rolesRoutes(server: FastifyInstance) {
         },
         preValidation: async (request, reply) => {
             const allowedRoles = ['admin']
-            await validateRole(request, reply, allowedRoles);
+            await validateAdminRole(request, reply, allowedRoles);
         }
     }, controller.deleteRoleCamerasHandler)
 }

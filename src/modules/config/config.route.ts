@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { getConfigsController, getConfigController, putConfigController, putConfigsController, getAdminController } from "./confg.controller";
 import { $ref, paramConfigSchema } from "./config.schema";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
-import { isAdminRolePrehandler, validateRole } from "../hooks/roles.prehandler";
+import { validateAdminRole } from "../hooks/roles.prehandler";
 import { logRequest, logResponse } from "../hooks/log.hooks";
 import { configOIDPRoutes } from "./oidp/config.oidp.route";
 
@@ -21,7 +21,7 @@ export async function configRoutes(server: FastifyInstance) {
         protectedRoutes.decorateRequest('user')
         protectedRoutes.addHook('preValidation', async (request, reply) => {
             await validateJwt(request, reply);
-            await isAdminRolePrehandler(request, reply);
+            await validateAdminRole(request, reply);
         })
     
         protectedRoutes.get('/', {

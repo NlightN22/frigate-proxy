@@ -62,9 +62,9 @@ class CameraController {
     }>, rep: FastifyReply) => {
         const { id } = req.params
         const { offset, limit } = req.query;
-        const pasedId = z.string().parse(id)
+        const frigateHostId = z.string().parse(id)
         const roles = req.user?.roles || []
-        const cameras = await this.cameraService.getAllCameras(roles, '', pasedId, [], offset, limit)
+        const cameras = await this.cameraService.getAllCameras(roles, '', frigateHostId, [], offset, limit)
         rep.send(cameras)
     })
 
@@ -72,8 +72,8 @@ class CameraController {
         Params: { id: string }
     }>, rep: FastifyReply) => {
         const { id } = req.params
-        const parsedId = z.string().parse(id)
-        const camera = await this.cameraService.getCamera(parsedId)
+        const cameraId = z.string().parse(id)
+        const camera = await this.cameraService.getCamera(cameraId)
         rep.send(camera)
     })
 
@@ -81,8 +81,8 @@ class CameraController {
         Params: { id: string }
     }>, rep: FastifyReply) => {
         const { id } = req.params
-        const parsedId = z.string().parse(id)
-        const camera = await this.cameraService.getCameraState(parsedId)
+        const cameraId = z.string().parse(id)
+        const camera = await this.cameraService.getCameraState(cameraId)
         rep.send(camera)
     })
 
@@ -90,8 +90,8 @@ class CameraController {
         Params: { id: string }
     }>, rep: FastifyReply) => {
         const { id } = req.params
-        const parsedId = z.string().parse(id)
-        rep.send(await this.cameraService.deleteCamera(parsedId))
+        const cameraId = z.string().parse(id)
+        rep.send(await this.cameraService.deleteCamera(cameraId))
     })
 
     deleteTagCameraHandler = withErrorHandler(async (req: FastifyRequest<{
@@ -101,9 +101,9 @@ class CameraController {
         },
     }>, rep: FastifyReply) => {
         const { id, tagId } = req.params
-        const parsedId = z.string().parse(id)
+        const cameraId = z.string().parse(id)
         const parsedTagId = z.string().parse(tagId)
-        return rep.send(await this.cameraService.deleteTagFromCamera(parsedId, parsedTagId))
+        return rep.send(await this.cameraService.deleteTagFromCamera(cameraId, parsedTagId))
     })
 
 

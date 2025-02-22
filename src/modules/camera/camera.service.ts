@@ -33,10 +33,15 @@ class CameraService {
         offset: number = -1,
         limit: number = -1,
     ) {
-        const adminRole = await this.configService.getAdminRole()
 
         // Build an array of filter conditions
         const filters: any[] = [];
+
+
+        // Add role filter if adminRole is not empty or user is not admin
+        const rolesFilter = await this.getPrismaRolesFilter(userRoles)
+        if (rolesFilter) filters.push(rolesFilter)
+
 
         // Add filter by camera name if provided
         if (name.trim() !== '') {
@@ -57,11 +62,6 @@ class CameraService {
         // Combine filters with AND operator if any filter exists
         const where = filters.length > 0 ? { AND: filters } : undefined;
 
-        // Add role filter if user is not admin
-        if (!adminRole || !userRoles.includes(adminRole.value)) {
-            filters.push({ roles: { some: { name: { in: userRoles } } } });
-        }
-
         // Fetch cameras with filters and pagination options
         const cameras = await this.prismaClient.findMany({
             include: {
@@ -76,24 +76,13 @@ class CameraService {
         return await this.addTagsToCamerasReply(cameras)
     }
 
-    async getCamerasByIds(cameraIds: string[]) {
-        const cameras = await this.prismaClient.findMany({
-            where: {
-                id: { in: cameraIds }
-            },
-            include: {
-                frigateHost: true,
-                roles: true
-            }
-        })
-        return await this.addTagsToCamerasReply(cameras)
-    }
-
-    async getCamera(id: string) {
+    async getCamera(
+        id: string,
+        userRoles: string[],
+    ) {
+        const rolesFilter = await this.getPrismaRolesFilter(userRoles)
         const camera = await this.prismaClient.findUniqueOrThrow({
-            where: {
-                id: id
-            },
+            where: { id: id, AND: rolesFilter },
             include: {
                 frigateHost: true,
                 roles: true
@@ -204,16 +193,14 @@ class CameraService {
         return await this.addTagsToCameraReply(camera)
     }
 
-    async deleteCamera(id: string) {
-        const camera = await this.getCamera(id)
-        let host
-        if (camera.frigateHostId) {
-            // host = await frigateHostsService.getFrigateHostOrNull(camera.frigateHostId)
-        }
-        if (host) throw new ErrorApp('validate', 'CameraService Cannot delete frigate camera. Host is exist')
+    async deleteCamera(
+        id: string,
+        userRoles: string[]
+    ) {
+        const camera = await this.getCamera(id, userRoles)
         const deletedCamera = await this.prismaClient.delete({
             where: {
-                id: id
+                id: camera.id
             },
             include: {
                 frigateHost: true,
@@ -235,7 +222,7 @@ class CameraService {
     }
 
     async getCamerasByRoles(rolesIds: string[]) {
-        const cameras =  await this.prismaClient.findMany({
+        const cameras = await this.prismaClient.findMany({
             where: {
                 rolesIDs: {
                     hasSome: rolesIds
@@ -272,6 +259,20 @@ class CameraService {
         }));
     }
 
+
+    private async getCamerasByIds(
+        cameraIds: string[],
+    ) {
+        const cameras = await this.prismaClient.findMany({
+            where: { id: { in: cameraIds } },
+            include: {
+                frigateHost: true,
+                roles: true
+            }
+        })
+        return await this.addTagsToCamerasReply(cameras)
+    }
+
     private async addTagsToCamerasReply(cameras: Camera[]) {
         const allTagIds = cameras.flatMap((camera) => camera.tagIds);
         const tags = await prisma.userTags.findMany({
@@ -303,6 +304,18 @@ class CameraService {
             tags: tags,
         }
 
+    }
+
+    private async getPrismaRolesFilter(roles: string[]) {
+        if (!(await this.isAdminOrEmpty(roles))) {
+            return { roles: { some: { name: { in: roles } } } }
+        }
+        return undefined
+    }
+
+    private async isAdminOrEmpty(roles: string[]) {
+        const adminRole = await this.configService.getAdminRole()
+        return !adminRole || roles.includes(adminRole.value)
     }
 }
 

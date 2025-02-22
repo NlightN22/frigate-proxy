@@ -33,3 +33,8 @@ export async function validateRole(request: FastifyRequest, reply: FastifyReply,
     if (!allowedRole) reply.code(403).send({ error: 'Forbidden' })
     logger.debug(`allowedRole ${allowedRole}`)
 }
+
+export async function isAdminRolePrehandler(request: FastifyRequest, reply: FastifyReply) {
+    const allowedRoles = ['admin',]
+    await validateRole(request, reply, allowedRoles)
+}

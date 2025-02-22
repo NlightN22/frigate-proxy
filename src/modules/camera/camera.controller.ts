@@ -73,7 +73,8 @@ class CameraController {
     }>, rep: FastifyReply) => {
         const { id } = req.params
         const cameraId = z.string().parse(id)
-        const camera = await this.cameraService.getCamera(cameraId)
+        const roles = req.user?.roles || []
+        const camera = await this.cameraService.getCamera(cameraId, roles)
         rep.send(camera)
     })
 
@@ -91,7 +92,8 @@ class CameraController {
     }>, rep: FastifyReply) => {
         const { id } = req.params
         const cameraId = z.string().parse(id)
-        rep.send(await this.cameraService.deleteCamera(cameraId))
+        const roles = req.user?.roles || []
+        rep.send(await this.cameraService.deleteCamera(cameraId, roles))
     })
 
     deleteTagCameraHandler = withErrorHandler(async (req: FastifyRequest<{

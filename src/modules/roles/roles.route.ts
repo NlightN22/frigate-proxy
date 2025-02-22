@@ -20,13 +20,9 @@ export async function rolesRoutes(server: FastifyInstance) {
         schema:{
             params: getRoleByIdSchema,
             body: $ref('addRoleCamerasSchema'),
-            response: {
-                // 201: $ref("responseRoleSchema")
-            }
         },
         preValidation: async (request, reply) => {
-            const allowedRoles = ['admin']
-            await validateAdminRole(request, reply, allowedRoles);
+            await validateAdminRole(request, reply);
         }
     }, controller.updateRoleCamerasHandler)
 
@@ -53,13 +49,9 @@ export async function rolesRoutes(server: FastifyInstance) {
         schema:{
             params: getRoleByIdSchema,
             body: $ref('deleteRoleCamerasSchema'),
-            response: {
-                // 201: $ref("responseRoleSchema")
-            }
         },
         preValidation: async (request, reply) => {
-            const allowedRoles = ['admin']
-            await validateAdminRole(request, reply, allowedRoles);
+            await validateAdminRole(request, reply);
         }
     }, controller.deleteRoleCamerasHandler)
 }

@@ -7,21 +7,7 @@ import sinon from 'sinon';
 import { cleanObjectByZodSchema, httpResponseTest } from '../../../__test__/test.utils';
 import { cameraRoutes } from '../camera.route';
 import { responseCameraSchema } from '../camera.schema';
-
-
-const responseExample = {
-    id: '65d0b991f6593bd703ff76ad',
-    createAt: '2024-02-17T13:50:09.379Z',
-    updateAt: '2024-02-17T13:50:09.379Z',
-    name: 'Dr. Rudy Cummings PhD',
-    state: null,
-    url: 'https://hidden-reluctance.name/',
-    frigateHost: {},
-    roles: [],
-    config: null,
-    tags: [],
-}
-
+import { responseCameraStateSchema } from '../camera.core.schema';
 
 export const testCameraSchema = {
     tags: [{
@@ -43,28 +29,24 @@ export const testCameraSchema = {
     tagIds: [faker.database.mongodbObjectId()],
 }
 
-async function postCamera(fastify: FastifyInstance) {
-    return await fastify.inject({
-        method: 'POST',
-        url: '/apiv1/cameras',
-        payload: {
-            name: testCameraSchema.name,
-            url: testCameraSchema.url,
-        }
-    })
-}
+test('Camera tests', t => {
 
-
-test('Camera tests without database', t => {
-
-    const fastify = Fastify()
-    fastify.register(cameraRoutes, { prefix: 'apiv1/cameras' })
+    let fastify: FastifyInstance
 
     // Hook to run before each test: create fresh mocks
     t.beforeEach(() => {
+        fastify = Fastify()
+        fastify.register(cameraRoutes, { prefix: 'apiv1/cameras' })
+    
         const mocks = mockServices();
         mocks.camerasService?.getAllCameras.resolves([testCameraSchema])
-
+        mocks.camerasService?.getCamera.resolves(testCameraSchema);
+        mocks.camerasService?.createCamera.resolves(testCameraSchema);
+        mocks.camerasService?.editCamera.resolves(testCameraSchema);
+        mocks.camerasService?.addTagToCamera.resolves(testCameraSchema);
+        mocks.camerasService?.deleteCamera.resolves(testCameraSchema);
+        mocks.camerasService?.deleteTagFromCamera.resolves(testCameraSchema);
+        mocks.camerasService?.getCameraState.resolves({ state: testCameraSchema.state });
     });
 
     // Hook to run after each test: restore stubbed functions
@@ -89,8 +71,233 @@ test('Camera tests without database', t => {
         t.match(jsonResponse, [cleanedTestCameraSchema])
 
         t.end()
-
     })
+
+    t.test('GET camera by id', async (t) => {
+        // Send GET request to retrieve camera by ID
+        const response = await fastify.inject({
+            method: 'GET',
+            url: `/apiv1/cameras/${testCameraSchema.id}`,
+        });
+
+        if (response.statusCode !== 200) {
+            console.log('response', response.body)
+        }
+
+        httpResponseTest(t, response);
+        const jsonResponse = response.json();
+        const cleanedTestCamera = cleanObjectByZodSchema(responseCameraSchema, testCameraSchema);
+        t.match(jsonResponse, cleanedTestCamera);
+        t.end();
+    });
+
+    t.test('GET cameras by host id', async (t) => {
+        // Send GET request with query parameters for pagination
+        const response = await fastify.inject({
+            method: 'GET',
+            url: `/apiv1/cameras/host/${testCameraSchema.frigateHostId}?offset=0&limit=10`,
+        });
+
+        if (response.statusCode !== 200) {
+            console.log('response', response.body)
+        }
+
+        httpResponseTest(t, response);
+        const jsonResponse = response.json();
+        t.ok(Array.isArray(jsonResponse));
+        const cleanedTestCamera = cleanObjectByZodSchema(responseCameraSchema, testCameraSchema);
+        t.match(jsonResponse, [cleanedTestCamera]);
+        t.end();
+    });
+
+    t.test('GET camera state', async (t) => {
+        // Send GET request to retrieve camera state (unauthenticated)
+        const response = await fastify.inject({
+            method: 'GET',
+            url: `/apiv1/cameras/${testCameraSchema.id}/state`,
+        });
+
+        if (response.statusCode !== 200) {
+            console.log('response', response.body)
+        }
+
+        httpResponseTest(t, response);
+        const jsonResponse = response.json();
+        const cleanedCameraState = cleanObjectByZodSchema(responseCameraStateSchema, testCameraSchema)
+        t.match(jsonResponse, cleanedCameraState);
+        t.end();
+    });
+
+    t.test('POST create camera', async (t) => {
+        // Prepare payload according to createCameraSchema
+        const payload = {
+            url: testCameraSchema.url,
+            name: testCameraSchema.name,
+            frigateHostId: testCameraSchema.frigateHostId,
+            config: testCameraSchema.config,
+        };
+        const response = await fastify.inject({
+            method: 'POST',
+            url: '/apiv1/cameras',
+            payload,
+        });
+
+        if (response.statusCode !== 201) {
+            console.log('response', response.body)
+        }
+
+        httpResponseTest(t, response, 201)
+        const jsonResponse = response.json();
+        const cleanedTestCamera = cleanObjectByZodSchema(responseCameraSchema, testCameraSchema);
+        t.match(jsonResponse, cleanedTestCamera);
+        t.end();
+    });
+
+    t.test('POST create camera. Should return 400', async (t) => {
+        // Prepare payload according to createCameraSchema
+        const payload = {
+            name: testCameraSchema.name,
+            frigateHostId: testCameraSchema.frigateHostId,
+            config: testCameraSchema.config,
+        };
+        const response = await fastify.inject({
+            method: 'POST',
+            url: '/apiv1/cameras',
+            payload,
+        });
+
+        if (response.statusCode !== 201) {
+            console.log('response', response.body)
+        }
+
+        httpResponseTest(t, response, 400)
+        t.end();
+    });
+
+    t.test('PUT update camera with host', async (t) => {
+        const payload = {
+            id: testCameraSchema.id,
+            name: testCameraSchema.name,
+            frigateHostId: testCameraSchema.frigateHostId,
+        };
+        const response = await fastify.inject({
+            method: 'PUT',
+            url: '/apiv1/cameras',
+            payload,
+        });
+
+        if (response.statusCode != 201) {
+            console.log('response', response.body)
+        }
+
+        httpResponseTest(t, response, 201)
+        const jsonResponse = response.json();
+        const cleanedTestCamera = cleanObjectByZodSchema(responseCameraSchema, testCameraSchema);
+        t.match(jsonResponse, cleanedTestCamera);
+        t.end();
+    });
+
+    t.test('PUT update camera with url', async (t) => {
+        const payload = {
+            id: testCameraSchema.id,
+            name: testCameraSchema.name,
+            url: testCameraSchema.url,
+        };
+        const response = await fastify.inject({
+            method: 'PUT',
+            url: '/apiv1/cameras',
+            payload,
+        });
+
+        if (response.statusCode != 201) {
+            console.log('response', response.body)
+        }
+
+        httpResponseTest(t, response, 201)
+        const jsonResponse = response.json();
+        const cleanedTestCamera = cleanObjectByZodSchema(responseCameraSchema, testCameraSchema);
+        t.match(jsonResponse, cleanedTestCamera);
+        t.end();
+    });
+
+    t.test('PUT update camera with host and url, should return 400', async (t) => {
+        const payload = {
+            id: testCameraSchema.id,
+            name: testCameraSchema.name,
+            frigateHostId: testCameraSchema.frigateHostId,
+            url: testCameraSchema.url,
+        };
+        const response = await fastify.inject({
+            method: 'PUT',
+            url: '/apiv1/cameras',
+            payload,
+        });
+
+        if (response.statusCode != 400) {
+            console.log('response', response.body)
+        }
+
+        httpResponseTest(t, response, 400)
+        t.end();
+    });
+
+    t.test('PUT add tag to camera', async (t) => {
+        // Send PUT request to add a tag to the camera
+        const response = await fastify.inject({
+            method: 'PUT',
+            url: `/apiv1/cameras/${testCameraSchema.id}/tag/${testCameraSchema.tagIds[0]}`,
+            // Admin authentication headers can be added here
+        });
+
+        if (response.statusCode !== 201) {
+            console.log('response', response.body)
+        }
+
+        httpResponseTest(t, response, 201)
+        const jsonResponse = response.json();
+        const cleanedTestCamera = cleanObjectByZodSchema(responseCameraSchema, testCameraSchema);
+        t.match(jsonResponse, cleanedTestCamera);
+        t.end();
+    });
+
+    t.test('DELETE camera', async (t) => {
+        // Send DELETE request to remove a camera
+        const response = await fastify.inject({
+            method: 'DELETE',
+            url: `/apiv1/cameras/${testCameraSchema.id}`,
+            // Admin authentication headers can be added here
+        });
+
+        if (response.statusCode !== 200) {
+            console.log('response', response.body)
+        }
+
+        httpResponseTest(t, response);
+        const jsonResponse = response.json();
+        const cleanedTestCamera = cleanObjectByZodSchema(responseCameraSchema, testCameraSchema);
+        t.match(jsonResponse, cleanedTestCamera);
+        t.end();
+    });
+
+    t.test('DELETE tag from camera', async (t) => {
+        // Send DELETE request to remove a tag from a camera
+        const response = await fastify.inject({
+            method: 'DELETE',
+            url: `/apiv1/cameras/${testCameraSchema.id}/tag/${testCameraSchema.tagIds[0]}`,
+            // Admin authentication headers can be added here
+        });
+
+                if (response.statusCode !== 200) {
+            console.log('response', response.body)
+        }
+
+        httpResponseTest(t, response);
+        const jsonResponse = response.json();
+        const cleanedTestCamera = cleanObjectByZodSchema(responseCameraSchema, testCameraSchema);
+        t.match(jsonResponse, cleanedTestCamera);
+        t.end();
+    });
+
 
     t.end()
 })

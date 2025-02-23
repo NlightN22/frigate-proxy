@@ -1,3 +1,32 @@
+import { FastifyInstance } from "fastify";
+import { testCameraSchema } from "./camera.test";
+
+
+const responseExample = {
+    id: '65d0b991f6593bd703ff76ad',
+    createAt: '2024-02-17T13:50:09.379Z',
+    updateAt: '2024-02-17T13:50:09.379Z',
+    name: 'Dr. Rudy Cummings PhD',
+    state: null,
+    url: 'https://hidden-reluctance.name/',
+    frigateHost: {},
+    roles: [],
+    config: null,
+    tags: [],
+}
+
+
+async function postCamera(fastify: FastifyInstance) {
+    return await fastify.inject({
+        method: 'POST',
+        url: '/apiv1/cameras',
+        payload: {
+            name: testCameraSchema.name,
+            url: testCameraSchema.url,
+        }
+    })
+}
+
 // test('Camera tests with database', t => {
 
 

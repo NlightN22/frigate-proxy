@@ -38,14 +38,7 @@ export async function cameraRoutes(server: FastifyInstance) {
             await validateJwt(request, reply);
         })
 
-        userRoutes.post('/', {
-            schema: {
-                body: $ref('createCameraSchema'),
-                response: {
-                    201: $ref("responseCameraSchema")
-                }
-            }
-        }, controller.createCameraHandler)
+
 
         userRoutes.get('/', {
             schema: {
@@ -83,6 +76,15 @@ export async function cameraRoutes(server: FastifyInstance) {
             await validateJwt(request, reply);
             await validateAdminRole(request, reply);
         })
+
+        adminRoutes.post('/', {
+            schema: {
+                body: $ref('createCameraSchema'),
+                response: {
+                    201: $ref("responseCameraSchema")
+                }
+            }
+        }, controller.createCameraHandler)
 
         adminRoutes.put('/', {
             schema: {

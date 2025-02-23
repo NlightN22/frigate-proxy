@@ -24,6 +24,7 @@ import { tagsRoutes } from "./modules/tag/tag.route"
 import { tagsSchemas } from "./modules/tag/tag.schema"
 import { usersRoutes } from "./modules/users/users.route"
 import { logger } from './utils/logger'
+import { testRoutes } from './__test__/test.routes'
 
 
 export interface User {
@@ -110,7 +111,9 @@ function buildServer() {
     fastify.register(proxyRoute, { prefix: 'proxy' })
     fastify.register(websocket)
     fastify.register(proxyWsRoute, { prefix: 'proxy-ws', config: { rateLimit: false } })
-
+    if (process.env.NODE_ENV === 'test') {
+        fastify.register(testRoutes)
+    }
     return fastify
 }
 

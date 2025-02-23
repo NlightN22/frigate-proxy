@@ -1,12 +1,16 @@
 import { FastifyInstance } from "fastify";
-import { getConfigsController, getConfigController, putConfigController, putConfigsController, getAdminController } from "./confg.controller";
 import { $ref, paramConfigSchema } from "./config.schema";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { validateAdminRole } from "../hooks/validate.admin.role";
 import { logRequest, logResponse } from "../hooks/log.hooks";
 import { configOIDPRoutes } from "./oidp/config.oidp.route";
+import { ConfigController } from "./confg.controller";
+import ConfigService from "./config.service";
 
 export async function configRoutes(server: FastifyInstance) {
+
+    const configService = ConfigService.getInstance()
+    const controller = new ConfigController(configService)
 
     server.addHook('onRequest', logRequest);
     server.addHook('onResponse', logResponse);
@@ -15,7 +19,7 @@ export async function configRoutes(server: FastifyInstance) {
         schema: {
             response: { 200: $ref('responseConfigSchema')},
         },
-    }, getAdminController)
+    }, controller.getAdminController)
 
     server.register(async function (adminRoutes) {
         adminRoutes.decorateRequest('user')
@@ -28,20 +32,20 @@ export async function configRoutes(server: FastifyInstance) {
             schema: {
                 response: { 200: $ref('responseConfigsSchema')},
             },
-        }, getConfigsController)
+        }, controller.getConfigs)
     
         adminRoutes.get('/:key', {
             schema: {
                 params: paramConfigSchema,
                 response:{ 200: $ref('responseConfigSchema')}
             }
-        }, getConfigController)
+        }, controller.getConfig)
         adminRoutes.put('/:key', {
             schema: {
                 params: paramConfigSchema,
                 response:{ 200: $ref('responseConfigSchema')}
             }
-        }, putConfigController)
+        }, controller.putConfig)
         adminRoutes.put('/', {
             schema: {
                 body: $ref('putConfigsSchema'),
@@ -49,7 +53,7 @@ export async function configRoutes(server: FastifyInstance) {
                     201: $ref('responseConfigsSchema'),
                 }
             }
-        }, putConfigsController)
+        }, controller.putConfigs)
 
         adminRoutes.register(async function (oidpRoutes) {
             await oidpRoutes.register(configOIDPRoutes, { prefix: '/oidp' })

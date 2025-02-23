@@ -1,15 +1,14 @@
+import { AxiosError } from "axios";
 import { z } from "zod";
 import { deepEqual } from "../../../utils/deep.equal";
 import { logger } from "../../../utils/logger";
+import prisma from "../../../utils/prisma";
 import { ErrorApp } from "../../hooks/error.handler";
 import { OIDPConfigService, RequestAccessTokenByPasswordSchema } from "../../oidp/oidp.schema";
+import OIDPService from "../../oidp/oidp.service";
 import ConfigService from "../config.service";
 import { PutOIDPConfig, ResponseOIDPConfig, oIDPConfigSchema } from "./config.oidp.schema";
-import { oIDPSettings, oidpSettingsKeys } from "./oidp.settings";
-import OIDPService from "../../oidp/oidp.service";
-import { AxiosError } from "axios";
-import prisma from "../../../utils/prisma";
-import { ResponseConfigsSchema, Setting } from "../config.schema";
+import { oidpSettingsKeys } from "./oidp.settings";
 
 class ConfigOIDPService {
     private static _instance: ConfigOIDPService
@@ -73,7 +72,6 @@ class ConfigOIDPService {
             logger.debug('Comparing new OIDP settings and saved at DB...')
             const isEqual = deepEqual(inputOIDPConfig, parsedCurrentDecrypted)
             logger.silly(`inputOIDPConfig: ${JSON.stringify(inputOIDPConfig)}`)
-            // logger.debug(`parsedCurrentDecrypted: ${JSON.stringify(parsedCurrentDecrypted)}`)
             if (isEqual) {
                 throw (new ErrorApp('validate', 'Settings are equal and not changed'))
             }
@@ -102,22 +100,6 @@ class ConfigOIDPService {
             throw e
         }
         return { success: false }
-    }
-
-    // TODO delete
-    async getAllEncryptedConfig(): Promise<ResponseConfigsSchema> {
-        const dbConfig = await this.prismaClient.findMany()
-        const allMapSettings = new Map<string, Setting>(oIDPSettings)
-        const responseConfigs: ResponseConfigsSchema = Array.from(allMapSettings).map(([key, setting]) => {
-            const dbItem = dbConfig.find(item => item.key === key);
-            return {
-                key,
-                value: dbItem ? dbItem.value : '',
-                description: dbItem?.description ?? setting.description,
-                encrypted: setting.encrypted
-            }
-        })
-        return responseConfigs
     }
 
     async getDecryptedOIDPConfig(): Promise<OIDPConfigService | undefined> {

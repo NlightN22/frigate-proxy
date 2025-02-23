@@ -11,6 +11,7 @@
     "dev": "nodemon src/app.ts",
     "lint": "eslint . --ext .ts",
     "test": "dotenv -e .env.test -- tap --node-arg=--require=ts-node/register",
+    "test-no-coverage": "dotenv -e .env.test -- tap --node-arg=--require=ts-node/register --disable-coverage",
     "teststudio": "dotenv -e .env.test -- yarn prisma studio",
     "updatedb": "prisma db push"
   },
@@ -57,7 +58,7 @@
     "winston": "^3.11.0",
     "zod": "^3.22.4",
     "zod-i18n-map": "^2.27.0",
-    "zod-to-json-schema": "^3.22.4"
+    "zod-to-json-schema": "^3.24.3"
   },
   "resolutions": {
     "strip-ansi": "6.0.0"

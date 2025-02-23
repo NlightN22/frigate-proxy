@@ -5,7 +5,6 @@ import { mockServices } from '../../../__test__/mocked.services';
 import * as jwt from 'jsonwebtoken';
 import { validateJwt } from '../jwks-rsa.prehandler';
 
-
 const mockedOIDPConfig = {
     clientId: 'testId',
     clientSecret: 'testSecret',
@@ -21,7 +20,6 @@ const testJWTResponse = {
 }
 
 let lastRequest: FastifyRequest;
-
 
 const createTestServer = (): FastifyInstance => {
     const fastify = Fastify();

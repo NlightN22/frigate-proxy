@@ -71,7 +71,6 @@ function buildServer() {
 
     for (const schema of [
         ...frigateHostSchemas,
-        ...cameraSchemas,
         ...proxySchemas,
         ...proxyWsSchemas,
         ...rolesSchemas,

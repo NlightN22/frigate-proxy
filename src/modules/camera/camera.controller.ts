@@ -46,9 +46,9 @@ class CameraController {
         }
     }>, rep: FastifyReply) => {
         const { name, frigateHostId, tagIds, offset, limit } = req.query;
-
+        const userId = req.user?.id
         const roles = req.user?.roles || []
-        const cameras = await this.cameraService.getAllCameras(roles, name, frigateHostId, tagIds, offset, limit)
+        const cameras = await this.cameraService.getAllCameras(roles, name, frigateHostId, tagIds, offset, limit, userId)
         rep.send(cameras)
     })
 
@@ -63,7 +63,8 @@ class CameraController {
         const { offset, limit } = req.query;
         const frigateHostId = z.string().parse(id)
         const roles = req.user?.roles || []
-        const cameras = await this.cameraService.getAllCameras(roles, '', frigateHostId, [], offset, limit)
+        const userId = req.user?.id
+        const cameras = await this.cameraService.getAllCameras(roles, '', frigateHostId, [], offset, limit, userId)
         rep.send(cameras)
     })
 

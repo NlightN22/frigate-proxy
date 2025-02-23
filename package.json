@@ -12,7 +12,7 @@
     "lint": "eslint . --ext .ts",
     "test": "dotenv -e .env.test -- tap --node-arg=--require=ts-node/register",
     "test-no-coverage": "dotenv -e .env.test -- tap --node-arg=--require=ts-node/register --disable-coverage",
-    "teststudio": "dotenv -e .env.test -- yarn prisma studio",
+    "studio": "yarn prisma studio",
     "updatedb": "prisma db push"
   },
   "author": "NlightN22 <oncharterliz@gmail.com>",

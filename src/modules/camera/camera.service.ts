@@ -39,6 +39,7 @@ class CameraService {
         tagIds: string[] = [],
         offset: number = -1,
         limit: number = -1,
+        userId: string = '',
     ) {
 
         // Build an array of filter conditions
@@ -80,7 +81,7 @@ class CameraService {
             take: limit > -1 ? limit : undefined,     // Apply limit if valid
         });
 
-        return await this.addTagsToCamerasReply(cameras)
+        return await this.addTagsToCamerasReply(cameras, userId)
     }
 
     async getCamera(
@@ -280,21 +281,31 @@ class CameraService {
         return await this.addTagsToCamerasReply(cameras)
     }
 
-    private async addTagsToCamerasReply(cameras: Camera[]) {
+    private async addTagsToCamerasReply(cameras: Camera[], userId: string = '') {
         const allTagIds = cameras.flatMap((camera) => camera.tagIds);
         const tags = await prisma.userTags.findMany({
-            where: { id: { in: allTagIds } },
+            where: {
+                id: { in: allTagIds },
+                userId: userId || undefined,
+            },
         });
+
+        logger.debug(`tags: ${JSON.stringify(tags)}`)
 
         const tagsMap = tags.reduce((acc, tag) => {
             acc[tag.id] = tag;
             return acc;
         }, {} as Record<string, typeof tags[0]>);
 
-        const camerasWithTags = cameras.map((camera) => ({
-            ...camera,
-            tags: camera.tagIds.map((tagId) => tagsMap[tagId]),
-        }));
+        const camerasWithTags = cameras.map((camera) => {
+            const foundTags = camera.tagIds
+                .map((tagId) => tagsMap[tagId])
+                .filter(Boolean)
+            return {
+                ...camera,
+                tags: foundTags.length > 0 ? foundTags : [],
+            }
+        });
         return camerasWithTags
     }
 

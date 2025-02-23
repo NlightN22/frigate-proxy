@@ -1,16 +1,14 @@
 import { FastifyInstance } from "fastify";
-import { $ref, paramConfigSchema } from "./config.schema";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
-import { validateAdminRole } from "../hooks/validate.admin.role";
 import { logRequest, logResponse } from "../hooks/log.hooks";
-import { configOIDPRoutes } from "./oidp/config.oidp.route";
+import { validateAdminRole } from "../hooks/validate.admin.role";
 import { ConfigController } from "./confg.controller";
-import ConfigService from "./config.service";
+import { $ref, paramConfigSchema } from "./config.schema";
+import { configOIDPRoutes } from "./oidp/config.oidp.route";
 
 export async function configRoutes(server: FastifyInstance) {
 
-    const configService = ConfigService.getInstance()
-    const controller = new ConfigController(configService)
+    const controller = new ConfigController()
 
     server.addHook('onRequest', logRequest);
     server.addHook('onResponse', logResponse);

@@ -4,9 +4,8 @@ import { ErrorApp, withErrorHandler } from "../hooks/error.handler"
 import { PutTagSchema, putTagSchema } from "./tag.schema"
 import TagService from "./tag.service"
 
-
 class TagController {
-    tagsService = new TagService()
+    private tagsService = new TagService()
 
     updateTagCamerasHandler = withErrorHandler(async (req: FastifyRequest<{
         Body: PutTagSchema

@@ -2,15 +2,24 @@ import { dev } from "../../consts"
 import { logger } from "../../utils/logger"
 import prisma from "../../utils/prisma"
 import { sleep } from "../../utils/sleep"
-import OIDPService, { OIDPAuthState } from "../oidp/oidp.service"
 import CameraService from "../camera/camera.service"
 import { ErrorApp } from "../hooks/error.handler"
-import { MissingRolesSchema, ResponseRoleSchema, ResponseRolesSchema, RoleCoreSchema } from "./roles.schema"
+import OIDPService, { OIDPAuthState } from "../oidp/oidp.service"
+import { MissingRolesSchema, RoleCoreSchema } from "./roles.schema"
 
 class RolesService {
+    private static _instance: RolesService
+
     prismaClient = prisma.role
     cameraService = new CameraService()
     oidpService = OIDPService.getInstance()
+
+    public static getInstance() {
+        if (!RolesService._instance) {
+            RolesService._instance = new RolesService()
+        }
+        return RolesService._instance
+    }
 
     constructor() {
         this.updateRolesJob(60000)

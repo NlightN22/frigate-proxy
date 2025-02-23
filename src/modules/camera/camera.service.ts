@@ -1,17 +1,24 @@
-import { Camera, FrigateHost } from "@prisma/client";
+import { Camera } from "@prisma/client";
 import { logger } from "../../utils/logger";
 import prisma from "../../utils/prisma";
 import ConfigService from "../config/config.service";
-import { ErrorApp } from "../hooks/error.handler";
 import { CreateCameraSchema, UpdateCameraSchema } from "./camera.schema";
 
-
 class CameraService {
+    private static _instance: CameraService
+
     private prismaClient = prisma.camera
     private configService = ConfigService.getInstance()
 
     constructor() {
         logger.debug(`CameraService initialized`)
+    }
+
+    public static getInstance() {
+        if (!CameraService._instance) {
+            CameraService._instance = new CameraService()
+        }
+        return CameraService._instance
     }
 
     async createCamera(input: CreateCameraSchema) {

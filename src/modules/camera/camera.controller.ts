@@ -4,10 +4,9 @@ import { CreateCameraSchema, ResponseCameraSchema, UpdateCameraSchema, createCam
 import CameraService from "./camera.service";
 import { z } from "zod";
 
-
 class CameraController {
 
-    cameraService = new CameraService()
+    private cameraService = new CameraService()
 
     createCameraHandler = withErrorHandler(async (req: FastifyRequest<{
         Body: CreateCameraSchema

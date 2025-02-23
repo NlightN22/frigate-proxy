@@ -4,13 +4,8 @@ import { PutConfigSchema, PutConfigsSchema, putConfigSchema, putConfigsSchema } 
 import ConfigService from "./config.service";
 import { z } from "zod";
 
-
 export class ConfigController {
-    private configService: ConfigService
-
-    constructor(configService: ConfigService) {
-        this.configService = configService
-    }
+    private configService = ConfigService.getInstance()
 
     putConfig = withErrorHandler(async (req: FastifyRequest<{
         Params: { key: string }

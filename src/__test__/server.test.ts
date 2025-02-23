@@ -8,12 +8,8 @@ import { mockServices } from './mocked.services';
 
 test('get `/healthcheck` route', async (t) => {
 
-
-    // t.teardown(() => {
-    //     fastify.close()
-    //     ImportMock.restore()
-    // })
-
+    // TODO add restore mocks
+    
     const fastify = buildServer()
 
     const response = await fastify.inject({

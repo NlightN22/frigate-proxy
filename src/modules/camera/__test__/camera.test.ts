@@ -186,7 +186,7 @@ test('Camera tests', t => {
             payload,
         });
 
-        if (response.statusCode != 201) {
+        if (response.statusCode !== 201) {
             console.log('response', response.body)
         }
 

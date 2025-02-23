@@ -68,6 +68,17 @@ export async function cameraRoutes(server: FastifyInstance) {
             }
         }, controller.getCameraHandler)
 
+        userRoutes.put('/:id/tag/:tagId', {
+            schema: {
+                params: putByTagIdSchema,
+            }
+        }, controller.putTagCameraHandler)
+
+        userRoutes.delete('/:id/tag/:tagId', {
+            schema: {
+                params: deleteByTagIdSchema,
+            }
+        }, controller.deleteTagCameraHandler)
     })
 
     server.register(async function (adminRoutes) {
@@ -95,12 +106,6 @@ export async function cameraRoutes(server: FastifyInstance) {
             }
         }, controller.putCameraHandler)
 
-        adminRoutes.put('/:id/tag/:tagId', {
-            schema: {
-                params: putByTagIdSchema,
-            }
-        }, controller.putTagCameraHandler)
-
         adminRoutes.delete('/:id', {
             schema: {
                 params: getByCameraIdSchema,
@@ -109,13 +114,5 @@ export async function cameraRoutes(server: FastifyInstance) {
                 }
             }
         }, controller.deleteCameraHandler)
-
-
-        adminRoutes.delete('/:id/tag/:tagId', {
-            schema: {
-                params: deleteByTagIdSchema,
-            }
-        }, controller.deleteTagCameraHandler)
-
     })
 }

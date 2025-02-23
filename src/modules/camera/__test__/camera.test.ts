@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { test } from 'tap';
 import { mockServices } from '../../../__test__/mocked.services';
+const mocks = mockServices()
+
 import { testCameraSchema } from '../../../__test__/test.schemas';
 import { cleanAfterTest, httpResponseTest, removeProperty } from '../../../__test__/test.utils';
 import buildServer from '../../../server';
@@ -31,8 +33,8 @@ async function postCamera(fastify: FastifyInstance) {
 }
 
 test(' GET cameras - get cameras from mock', async (t) => {
-    const mocks = mockServices()
-    mocks.camerasService?.mock('getAllCameras', [testCameraSchema])
+    // const mocks = mockServices()
+    mocks.camerasService?.getAllCameras.resolves([testCameraSchema])
     const fastify = buildServer()
 
     cleanAfterTest(fastify, t)

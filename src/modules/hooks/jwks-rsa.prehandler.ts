@@ -8,9 +8,9 @@ import { OIDPUrls } from "../oidp/oidp.urls"
 import { ErrorApp } from "./error.handler"
 import { TokenUser } from "./token.types"
 
-const configOIDPService = ConfigOIDPService.getInstance()
 
 const getUrl = async () => {
+    const configOIDPService = ConfigOIDPService.getInstance()
     const oidpConfig = await configOIDPService.getDecryptedOIDPConfig()
     return oidpConfig?.clientURL
 }
@@ -35,23 +35,24 @@ async function getJwksClient() {
 
 function getKey(header, callback) {
     getJwksClient().then(jwksClient => {
-    jwksClient.getSigningKey(header.kid, (err, key) => {
-        if (err) {
-            callback(err, null)
-            return
-        }
-        if (!key) {
-            callback(new ErrorApp('internal', 'validateJwt key does not exists'))
-            return
-        }
-        let signingKey = 'rsaPublicKey' in key ? key.rsaPublicKey : key.getPublicKey ? key.getPublicKey() : null
-        if (!signingKey) {
-            callback(new ErrorApp('internal', 'validateJwt Unable to find a signing key.'), null)
-            return
-        }
-        // logger.debug(`signingKey: ${JSON.stringify(signingKey)}`)
-        callback(null, signingKey)
-    })}).catch(err => {
+        jwksClient.getSigningKey(header.kid, (err, key) => {
+            if (err) {
+                callback(err, null)
+                return
+            }
+            if (!key) {
+                callback(new ErrorApp('internal', 'validateJwt key does not exists'))
+                return
+            }
+            let signingKey = 'rsaPublicKey' in key ? key.rsaPublicKey : key.getPublicKey ? key.getPublicKey() : null
+            if (!signingKey) {
+                callback(new ErrorApp('internal', 'validateJwt Unable to find a signing key.'), null)
+                return
+            }
+            // logger.debug(`signingKey: ${JSON.stringify(signingKey)}`)
+            callback(null, signingKey)
+        })
+    }).catch(err => {
         callback(new ErrorApp('internal', `validateJwt JWKS client initialization error:${err.message}`), null)
     })
 }

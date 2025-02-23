@@ -1,10 +1,7 @@
 import Fastify, { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import sinon from 'sinon';
 import { test } from 'tap';
-
 import { mockServices } from '../../../__test__/mocked.services';
-const mocks = mockServices()
-
 import * as jwt from 'jsonwebtoken';
 import { validateJwt } from '../jwks-rsa.prehandler';
 
@@ -25,6 +22,7 @@ const testJWTResponse = {
 
 let lastRequest: FastifyRequest;
 
+
 const createTestServer = (): FastifyInstance => {
     const fastify = Fastify();
 
@@ -40,80 +38,104 @@ const createTestServer = (): FastifyInstance => {
     return fastify;
 };
 
-test('validateJwt should pass with a valid token', async (t) => {
-    mocks.configOIDPService?.getDecryptedOIDPConfig.resolves(mockedOIDPConfig);
-    const fastify = createTestServer();
+test('validateJwt tests', t => {
 
-    // Import jsonwebtoken using require to allow stubbing
-    const jwt = require('jsonwebtoken');
+    const fastify = createTestServer()
 
-    const jwtStub = sinon.stub(jwt, 'verify').callsFake((
-        token: string,
-        secretOrPublicKey: jwt.Secret | jwt.GetPublicKeyOrSecret,
-        options: jwt.VerifyOptions | undefined,
-        callback?: jwt.VerifyCallback
-    ) => {
-        if (typeof callback === 'function') {
-            callback(null, {
-                sub: testJWTResponse.sub,
-                name: testJWTResponse.name,
-                realm_access: testJWTResponse.realm_access
-            });
-        }
+    // Hook to run before each test: create fresh mocks
+    t.beforeEach(() => {
+        const mocks = mockServices();
+        mocks.configOIDPService?.getDecryptedOIDPConfig.resolves(mockedOIDPConfig);
     });
 
-    const response = await fastify.inject({
-        method: 'GET',
-        url: '/test',
-        headers: { authorization: 'Bearer valid_token' }
+    // Hook to run after each test: restore stubbed functions
+    t.afterEach(() => {
+        sinon.restore()
     });
 
-    t.equal(response.statusCode, 200, 'Should pass validation');
-    t.ok(lastRequest?.user, 'User should be set in request');
-    t.equal(lastRequest?.user?.id, '12345');
-    t.equal(lastRequest?.user?.name, 'Test User');
-    t.same(lastRequest?.user?.roles, ['admin']);
 
-    jwtStub.restore();
-});
+    t.test('should pass with a valid token', async (t) => {
 
-test('validateJwt should return 401 when token is missing', async (t) => {
-    const fastify = createTestServer();
+        // Import jsonwebtoken using require to allow stubbing
+        const jwt = require('jsonwebtoken');
 
-    const response = await fastify.inject({
-        method: 'GET',
-        url: '/test',
-        headers: {} // No Authorization header
+        sinon.stub(jwt, 'verify').callsFake((
+            token: string,
+            secretOrPublicKey: jwt.Secret | jwt.GetPublicKeyOrSecret,
+            options: jwt.VerifyOptions | undefined,
+            callback?: jwt.VerifyCallback
+        ) => {
+            if (typeof callback === 'function') {
+                callback(null, {
+                    sub: testJWTResponse.sub,
+                    name: testJWTResponse.name,
+                    realm_access: testJWTResponse.realm_access
+                });
+            }
+        });
+
+        const response = await fastify.inject({
+            method: 'GET',
+            url: '/test',
+            headers: { authorization: 'Bearer valid_token' }
+        });
+
+        t.equal(response.statusCode, 200, 'Should pass validation');
+        console.log('lastRequest?.user', lastRequest?.user)
+        t.ok(lastRequest?.user, 'User should be set in request');
+        t.equal(lastRequest?.user?.id, testJWTResponse.sub);
+        t.equal(lastRequest?.user?.name, testJWTResponse.name);
+        t.same(lastRequest?.user?.roles, testJWTResponse.realm_access.roles);
+
+        t.end()
     });
 
-    t.equal(response.statusCode, 401, 'Should return 401 when no token is provided');
-});
+    t.test('should return 401 when token is missing', async (t) => {
+        const fastify = createTestServer();
 
-test('validateJwt should return 401 when token is invalid', async (t) => {
-    const fastify = createTestServer();
+        const response = await fastify.inject({
+            method: 'GET',
+            url: '/test',
+            headers: {} // No Authorization header
+        });
 
-    // Import jsonwebtoken using require to allow stubbing
-    const jwt = require('jsonwebtoken');
-
-    const jwtStub = sinon.stub(jwt, 'verify').callsFake((
-        token: string,
-        key: jwt.Secret | jwt.GetPublicKeyOrSecret,
-        options: jwt.VerifyOptions | undefined,
-        callback?: jwt.VerifyCallback
-    ) => {
-        if (typeof callback === 'function') {
-            // Using JsonWebTokenError to satisfy the expected error type
-            callback(new jwt.JsonWebTokenError('Invalid token'), undefined);
-        }
+        t.equal(response.statusCode, 401, 'Should return 401 when no token is provided');
+        t.end()
     });
 
-    const response = await fastify.inject({
-        method: 'GET',
-        url: '/test',
-        headers: { authorization: 'Bearer invalid_token' }
+    t.test('should return 401 when token is invalid', async (t) => {
+        const fastify = createTestServer();
+
+        // Import jsonwebtoken using require to allow stubbing
+        const jwt = require('jsonwebtoken');
+
+        const jwtStub = sinon.stub(jwt, 'verify').callsFake((
+            token: string,
+            key: jwt.Secret | jwt.GetPublicKeyOrSecret,
+            options: jwt.VerifyOptions | undefined,
+            callback?: jwt.VerifyCallback
+        ) => {
+            if (typeof callback === 'function') {
+                // Using JsonWebTokenError to satisfy the expected error type
+                callback(new jwt.JsonWebTokenError('Invalid token'), undefined);
+            }
+        });
+
+        const response = await fastify.inject({
+            method: 'GET',
+            url: '/test',
+            headers: { authorization: 'Bearer invalid_token' }
+        });
+
+        t.equal(response.statusCode, 401, 'Should return 401 when token is invalid');
+
+        jwtStub.restore();
+        t.end()
     });
 
-    t.equal(response.statusCode, 401, 'Should return 401 when token is invalid');
+    t.end()
+})
 
-    jwtStub.restore();
-});
+
+
+

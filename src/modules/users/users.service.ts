@@ -2,7 +2,7 @@ import { logger } from "../../utils/logger"
 import { AuthUser, UserByRole } from "../oidp/oidp.schema"
 import OIDPService from "../oidp/oidp.service"
 
-export class UserService {
+class UserService {
     private static _instance: UserService
 
     oidpService = OIDPService.getInstance()
@@ -25,3 +25,5 @@ export class UserService {
         return await this.oidpService.fetchUsersByRole(roleName)
     }
 }
+
+export default UserService

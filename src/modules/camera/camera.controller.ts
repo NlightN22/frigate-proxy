@@ -6,7 +6,7 @@ import { z } from "zod";
 
 class CameraController {
 
-    private cameraService = new CameraService()
+    private cameraService = CameraService.getInstance()
 
     createCameraHandler = withErrorHandler(async (req: FastifyRequest<{
         Body: CreateCameraSchema

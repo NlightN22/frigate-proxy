@@ -2,9 +2,9 @@ import { FastifyInstance } from "fastify";
 import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { logRequest, logResponse } from "../hooks/log.hooks";
 import { validateAdminRole } from "../hooks/validate.admin.role";
-import { ConfigController } from "./confg.controller";
 import { $ref, paramConfigSchema } from "./config.schema";
 import { configOIDPRoutes } from "./oidp/config.oidp.route";
+import ConfigController from "./confg.controller";
 
 export async function configRoutes(server: FastifyInstance) {
 

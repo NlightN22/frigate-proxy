@@ -1,8 +1,7 @@
 import { FastifyInstance } from "fastify";
-import { Test } from "tap";
-import { ImportMock } from "ts-mock-imports";
-import prisma from "../utils/prisma";
 import { Response } from 'light-my-request';
+import { Test } from "tap";
+import prisma from "../utils/prisma";
 
 
 export function removeProperty(obj, propName) {
@@ -17,7 +16,6 @@ export function addProperty(obj, propName) {
 export function cleanAfterTest(fastify: FastifyInstance, t: Test) {
     t.teardown(async () => {
         fastify.close()
-        ImportMock.restore()
         await prisma.camera.deleteMany({})
         await prisma.frigateHost.deleteMany({})
     })

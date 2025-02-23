@@ -11,7 +11,7 @@ class RolesService {
     private static _instance: RolesService
 
     prismaClient = prisma.role
-    cameraService = new CameraService()
+    cameraService = CameraService.getInstance()
     oidpService = OIDPService.getInstance()
 
     public static getInstance() {

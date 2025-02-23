@@ -6,7 +6,7 @@ import { PutTagSchema } from "./tag.schema"
 
 class TagService {
     private static _instance: TagService
-    cameraService = new CameraService()
+    cameraService = CameraService.getInstance()
     prismaClient = prisma.userTags
 
     public static getInstance() {

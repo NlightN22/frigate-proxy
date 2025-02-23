@@ -8,8 +8,6 @@ import { allSettings } from "./all.settings";
 import { appSettingsKeys } from "./app.settings";
 import { PutConfigsSchema, ResponseConfigsSchema, Setting, ValidateResponse } from "./config.schema";
 
-
-
 export type MapSettings = [string, Setting][]
 
 class ConfigService {

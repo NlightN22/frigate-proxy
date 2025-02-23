@@ -4,7 +4,7 @@ import { AddRoleCamerasSchema, DeleteRoleCamerasSchema, addRoleCamerasSchema, de
 import RolesService from "./roles.service"
 
 class RolesController {
-    private rolesService = new RolesService()
+    private rolesService = RolesService.getInstance()
 
     getRolesHandler = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
         rep.send(await this.rolesService.getAllRoles())

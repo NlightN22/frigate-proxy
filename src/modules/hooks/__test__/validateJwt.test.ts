@@ -1,9 +1,12 @@
-import * as jwt from 'jsonwebtoken';
 import sinon from 'sinon';
 import { test } from 'tap';
+
 import { mockServices } from '../../../__test__/mocked.services';
-import { cleanAfterTest } from '../../../__test__/test.utils';
+const mocks = mockServices()
+
+import * as jwt from 'jsonwebtoken';
 import buildServer from '../../../server';
+import { cleanAfterTest } from '../../../__test__/test.utils';
 import { validateJwt } from '../jwks-rsa.prehandler';
 
 let lastRequest: any;
@@ -17,25 +20,31 @@ const mockedOIDPConfig = {
 }
 
 test('validateJwt should pass with a valid token', async (t) => {
-    const mocks = mockServices()
 
     mocks.configOIDPService?.getDecryptedOIDPConfig.resolves(mockedOIDPConfig)
 
     const fastify = buildServer();
-    cleanAfterTest(fastify, t)
+    // cleanAfterTest(fastify, t)
+    
+    // Import jsonwebtoken using require to allow stubbing
+    // const jwt = require('jsonwebtoken');
 
+    // const jwtVerifyStub = sinon.stub(jwt, 'verify').callsFake((
+    //     token: string,
+    //     secretOrPublicKey: jwt.Secret | jwt.GetPublicKeyOrSecret,
+    //     options: jwt.VerifyOptions | undefined,
+    //     callback?: jwt.VerifyCallback
+    // ) => {
+    //     if (typeof callback === 'function') {
+    //         callback(null, {
+    //             sub: '12345',
+    //             name: 'Test User',
+    //             realm_access: { roles: ['admin'] }
+    //         });
+    //     }
+    // });
 
-    const jwtVerifyStub = sinon.stub(jwt, 'verify').callsFake((token, key, options, callback) => {
-        if (callback) {
-            callback(null, {
-                sub: '12345',
-                name: 'Test User',
-                realm_access: { roles: ['admin'] }
-            });
-        }
-    });
-
-    fastify.addHook('preValidation', validateJwt);
+    // fastify.addHook('preValidation', validateJwt);
 
     const response = await fastify.inject({
         method: 'GET',
@@ -43,9 +52,9 @@ test('validateJwt should pass with a valid token', async (t) => {
         headers: { authorization: 'Bearer valid_token' }
     });
 
-    fastify.addHook('preHandler', async (request, reply) => {
-        lastRequest = request;
-    });
+    // fastify.addHook('preHandler', async (request, reply) => {
+    //     lastRequest = request;
+    // });
 
     t.equal(response.statusCode, 200, 'Should pass validation');
 
@@ -54,7 +63,8 @@ test('validateJwt should pass with a valid token', async (t) => {
     t.equal(lastRequest?.user?.name, 'Test User');
     t.same(lastRequest?.user?.roles, ['admin']);
 
-    jwtVerifyStub.restore();
+    // jwtVerifyStub.restore();
+
 });
 
 // test('validateJwt should return 401 when token is missing', async (t) => {

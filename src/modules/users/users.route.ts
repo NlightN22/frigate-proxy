@@ -5,7 +5,7 @@ import { validateJwt } from "../hooks/jwks-rsa.prehandler";
 import { logRequest, logResponse } from "../hooks/log.hooks";
 
 export async function usersRoutes(server: FastifyInstance) {
-    const usersController = new UsersController()
+    const controller = new UsersController()
 
     server.addHook('onRequest', logRequest)
     server.addHook('onResponse', logResponse)
@@ -17,11 +17,11 @@ export async function usersRoutes(server: FastifyInstance) {
 
     server.get('/', {
 
-    }, usersController.getUsersHandler)
+    }, controller.getUsersHandler)
 
     server.get('/:role', {
         schema: {
             params: getUsersByRoleSchema,
         }
-    }, usersController.getUsersByRoleHandler)
+    }, controller.getUsersByRoleHandler)
 }

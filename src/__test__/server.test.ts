@@ -1,17 +1,18 @@
 import { test } from 'tap';
-import { ImportMock } from 'ts-mock-imports';
+
+mockServices()
+
 import buildServer from '../server';
 import { mockServices } from './mocked.services';
 
 
 test('get `/healthcheck` route', async (t) => {
 
-    mockServices()
 
-    t.teardown(() => {
-        fastify.close()
-        ImportMock.restore()
-    })
+    // t.teardown(() => {
+    //     fastify.close()
+    //     ImportMock.restore()
+    // })
 
     const fastify = buildServer()
 

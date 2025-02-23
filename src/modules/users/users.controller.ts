@@ -1,12 +1,12 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { withErrorHandler } from "../hooks/error.handler";
-import { UserService } from "./users.service";
+import UserService from "./users.service";
 import { z } from "zod";
 
 
 class UsersController {
 
-    private userService = new UserService()
+    private userService = UserService.getInstance()
 
     getUsersHandler = withErrorHandler(async (req: FastifyRequest, rep: FastifyReply) => {
         const users = await this.userService.getUsers()

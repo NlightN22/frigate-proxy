@@ -5,7 +5,7 @@ import { PutTagSchema, putTagSchema } from "./tag.schema"
 import TagService from "./tag.service"
 
 class TagController {
-    private tagsService = new TagService()
+    private tagsService = TagService.getInstance()
 
     updateTagCamerasHandler = withErrorHandler(async (req: FastifyRequest<{
         Body: PutTagSchema

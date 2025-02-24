@@ -33,7 +33,7 @@ export function httpResponseTest(t: Test, response: Response, statusCode: number
 
 export function cleanObjectByZodSchema(zodSchema: z.ZodType<any>, obj: object) {
     const jsonSchema = zodToJsonSchema(zodSchema);
-    const ajv = new Ajv({ 
+    const ajv = new Ajv({
         removeAdditional: true,
     });
     addFormats(ajv);
@@ -42,3 +42,34 @@ export function cleanObjectByZodSchema(zodSchema: z.ZodType<any>, obj: object) {
     validate(data);
     return data;
 }
+
+export function cleanFromReferencesIds(obj: any) {
+    const references = ['frigateHostId', 'rolesIDs', 'tagIds']
+    references.forEach( prop => {
+        obj = removeProperty(obj, prop)
+    })
+    return obj
+}
+
+export function matchWOTimeFields(t: Test, found: any, wanted: any) {
+    const properties = ['updatedAt', 'createdAt']
+    properties.forEach( prop => {
+        found = removeProperty(found, prop)
+        wanted = removeProperty(wanted, prop)
+    })
+
+    t.match(found, wanted)
+}
+
+export function sameObjectsFieldsTest(
+    test: Test,
+    found: any,
+    wanted: any,
+    message: string = 'Objects should have the same fields'
+) {
+    test.same(
+        [...new Set(Object.keys(found))].sort(),
+        [...new Set(Object.keys(wanted))].sort(),
+        message
+    );
+};

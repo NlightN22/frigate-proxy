@@ -2,8 +2,8 @@ import { z } from "zod";
 
 export const responseCameraCoreSchema = z.object({
     id: z.string(),
-    createAt: z.date(),
-    updateAt: z.date(),
+    createdAt: z.date(),
+    updatedAt: z.date(),
     name: z.string(),
     url: z.string().url().optional(),
     state: z.boolean().nullable(),

@@ -4,8 +4,8 @@ import { responseCameraSchema, responseCamerasSchema } from "../camera/camera.sc
 
 const cameraSchema = z.object({
     id: z.string(),
-    createAt: z.date(),
-    updateAt: z.date(),
+    createdAt: z.date(),
+    updatedAt: z.date(),
     name: z.string(),
     url: z.string().nullable(),
     frigateHostId: z.string().nullable(),
@@ -15,8 +15,8 @@ const cameraSchema = z.object({
 
 const missingRoleSchema = z.object({
     id: z.string(),
-    createAt: z.date(),
-    updateAt: z.date(),
+    createdAt: z.date(),
+    updatedAt: z.date(),
     name: z.string(),
     cameraIDs: z.array(z.string()),
     cameras: z.array(cameraSchema),
@@ -48,8 +48,8 @@ export const deleteRoleCamerasSchema = addRoleCamerasSchema
 const responseCoreSchema = z.object({
     id: z.string(),
     name: z.string(),
-    createAt: z.date(),
-    updateAt: z.date(),
+    createdAt: z.date(),
+    updatedAt: z.date(),
 })
 export const responseRoleSchema = responseCoreSchema
 

@@ -83,8 +83,8 @@ export const updateHostsSchema = updateHostSchema.array()
 
 export const responseHostCoreSchema = {
     id: z.string(),
-    createAt: z.date(),
-    updateAt: z.date(),
+    createdAt: z.date(),
+    updatedAt: z.date(),
     name: z.string(),
     host: z.string(),
     enabled: z.boolean().nullable(),

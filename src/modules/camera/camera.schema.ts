@@ -120,12 +120,8 @@ export const createCameraSchema = z.object({
 export const updateCameraSchema = z.object({
     id: z.string(),
     name: z.string(),
-    frigateHostId: z.string().optional(),
-    url: z.string().url().optional(),
-}).refine((data) => {
-    return (data.frigateHostId && !data.url) || (!data.frigateHostId && data.url);
-},
-    { params: { i18n: "HostOrUrlExist" } })
+    url: z.string().url(),
+})
 
 
 

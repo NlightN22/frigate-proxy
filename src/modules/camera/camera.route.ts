@@ -38,8 +38,6 @@ export async function cameraRoutes(server: FastifyInstance) {
             await validateJwt(request, reply);
         })
 
-
-
         userRoutes.get('/', {
             schema: {
                 querystring: getCamerasQuerySchema,

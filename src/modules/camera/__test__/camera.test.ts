@@ -1,27 +1,26 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import { test } from 'tap';
 import { mockServices } from '../../../__test__/mocked.services';
-
-import { faker } from '@faker-js/faker';
 import sinon from 'sinon';
 import { cleanObjectByZodSchema, httpResponseTest } from '../../../__test__/test.utils';
+import { responseCameraStateSchema } from '../camera.core.schema';
 import { cameraRoutes } from '../camera.route';
 import { responseCameraSchema } from '../camera.schema';
-import { responseCameraStateSchema } from '../camera.core.schema';
+import { faker } from '@faker-js/faker';
 
-export const testCameraSchema = {
+const testCameraSchema = {
     tags: [{
         value: faker.commerce.productName(),
         id: faker.database.mongodbObjectId(),
-        createAt: faker.date.anytime(),
-        updateAt: faker.date.anytime(),
+        createdAt: faker.date.anytime(),
+        updatedAt: faker.date.anytime(),
         userId: faker.database.mongodbObjectId(),
     }],
     url: faker.internet.url(),
     name: faker.person.fullName(),
     id: faker.database.mongodbObjectId(),
-    createAt: faker.date.anytime(),
-    updateAt: faker.date.anytime(),
+    createdAt: faker.date.anytime(),
+    updatedAt: faker.date.anytime(),
     frigateHostId: faker.database.mongodbObjectId(),
     rolesIDs: [faker.database.mongodbObjectId()],
     state: faker.datatype.boolean(),
@@ -35,9 +34,6 @@ test('Camera tests', t => {
 
     // Hook to run before each test: create fresh mocks
     t.beforeEach(() => {
-        fastify = Fastify()
-        fastify.register(cameraRoutes, { prefix: 'apiv1/cameras' })
-    
         const mocks = mockServices();
         mocks.camerasService?.getAllCameras.resolves([testCameraSchema])
         mocks.camerasService?.getCamera.resolves(testCameraSchema);
@@ -47,6 +43,9 @@ test('Camera tests', t => {
         mocks.camerasService?.deleteCamera.resolves(testCameraSchema);
         mocks.camerasService?.deleteTagFromCamera.resolves(testCameraSchema);
         mocks.camerasService?.getCameraState.resolves({ state: testCameraSchema.state });
+
+        fastify = Fastify()
+        fastify.register(cameraRoutes, { prefix: 'apiv1/cameras' })
     });
 
     // Hook to run after each test: restore stubbed functions
@@ -166,34 +165,11 @@ test('Camera tests', t => {
             payload,
         });
 
-        if (response.statusCode !== 201) {
+        if (response.statusCode !== 400) {
             console.log('response', response.body)
         }
 
         httpResponseTest(t, response, 400)
-        t.end();
-    });
-
-    t.test('PUT update camera with host', async (t) => {
-        const payload = {
-            id: testCameraSchema.id,
-            name: testCameraSchema.name,
-            frigateHostId: testCameraSchema.frigateHostId,
-        };
-        const response = await fastify.inject({
-            method: 'PUT',
-            url: '/apiv1/cameras',
-            payload,
-        });
-
-        if (response.statusCode !== 201) {
-            console.log('response', response.body)
-        }
-
-        httpResponseTest(t, response, 201)
-        const jsonResponse = response.json();
-        const cleanedTestCamera = cleanObjectByZodSchema(responseCameraSchema, testCameraSchema);
-        t.match(jsonResponse, cleanedTestCamera);
         t.end();
     });
 
@@ -242,11 +218,9 @@ test('Camera tests', t => {
     });
 
     t.test('PUT add tag to camera', async (t) => {
-        // Send PUT request to add a tag to the camera
         const response = await fastify.inject({
             method: 'PUT',
             url: `/apiv1/cameras/${testCameraSchema.id}/tag/${testCameraSchema.tagIds[0]}`,
-            // Admin authentication headers can be added here
         });
 
         if (response.statusCode !== 201) {

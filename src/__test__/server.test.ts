@@ -1,15 +1,14 @@
 import { test } from 'tap';
 
-mockServices()
 
 import buildServer from '../server';
 import { mockServices } from './mocked.services';
+import sinon from 'sinon';
 
 
 test('get `/healthcheck` route', async (t) => {
+    mockServices()
 
-    // TODO add restore mocks
-    
     const fastify = buildServer()
 
     const response = await fastify.inject({
@@ -19,4 +18,5 @@ test('get `/healthcheck` route', async (t) => {
 
     t.equal(response.statusCode, 200)
     t.same(response.json(), { status: "OK" })
+    sinon.restore()
 }) 

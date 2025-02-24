@@ -15,8 +15,8 @@ datasource db {
 
 model Camera {
   id            String           @id @default(auto()) @map("_id") @db.ObjectId
-  createAt      DateTime         @default(now())
-  updateAt      DateTime         @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
   name          String
   url           String?
   frigateHost   FrigateHost?     @relation(fields: [frigateHostId], references: [id], onDelete: Cascade)
@@ -30,8 +30,8 @@ model Camera {
 
 model FrigateHost {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   name     String   @unique
   host     String   @unique
   enabled  Boolean? @default(true)
@@ -41,8 +41,8 @@ model FrigateHost {
 
 model Role {
   id        String   @id @map("_id")
-  createAt  DateTime @default(now())
-  updateAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   name      String   @unique
   cameras   Camera[] @relation(fields: [cameraIDs], references: [id])
   cameraIDs String[] @db.ObjectId
@@ -67,8 +67,8 @@ model AppSettings {
 
 model UserTags {
   id            String       @id @default(auto()) @map("_id") @db.ObjectId
-  createAt      DateTime     @default(now())
-  updateAt      DateTime     @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   value         String       
   userId        String
   @@unique([value, userId])

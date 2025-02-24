@@ -4,16 +4,17 @@ import { ErrorApp } from "../hooks/error.handler";
 import { CreateHostsSchema, ResponseHostStatisSchema, UpdateHostSchema, UpdateHostsSchema, createHostSchema, } from "./frigate-hosts.schema";
 import { FrigateAPIUrls } from "./frigate-api.urls";
 import { logger } from "../../utils/logger";
-import FrigateHostUpdates from "./frigate-host.updates";
+import FrigateHostUpdater from "./frigatehost.updater";
+import FrigateCamerasUpdater from "./frigate.cameras.updater";
 
 class FrigateHostsService {
     private static _instance: FrigateHostsService
     private prismaClient = prisma.frigateHost
-    private _updateService?: FrigateHostUpdates
 
     private constructor() {
         logger.debug(`FrigateHostsService initialize update service...`)
-        FrigateHostUpdates.initialize(this)
+        FrigateHostUpdater.initialize(this)
+        FrigateCamerasUpdater.initialize(this)
         logger.debug(`FrigateHostsService initialized`)
     }
 
@@ -147,7 +148,7 @@ class FrigateHostsService {
 
         const checkURL = hostURL.toString() + FrigateAPIUrls.version
         logger.silly(`FrigateHostsService Check host ${host.name} status at ${hostURL}`)
-        if (!hostURL || !(hostURL instanceof URL)) throw new ErrorApp('validate', `FrigateHostsService Can not convert host ${host.name} to URL`)
+        if (!hostURL || !(hostURL instanceof URL)) throw new ErrorApp('validate', `FrigateHostsService can not convert host ${host.name} to URL`)
 
         try {
             const response = await this.fetcher(checkURL)

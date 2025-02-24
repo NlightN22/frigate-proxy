@@ -27,7 +27,7 @@ class RolesController {
     }>, rep: FastifyReply) => {
         const { id } = req.params
         const { cameraIDs } = addRoleCamerasSchema.parse(req.body)
-        rep.send(await this.rolesService.editCameras(id, cameraIDs))
+        rep.send(await this.rolesService.upsertCameras(id, cameraIDs))
     })
     deleteRoleCamerasHandler = withErrorHandler(async (req: FastifyRequest<{
         Params: { id: string }

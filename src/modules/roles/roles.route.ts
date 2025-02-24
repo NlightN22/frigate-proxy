@@ -14,6 +14,7 @@ export async function rolesRoutes(server: FastifyInstance) {
     server.decorateRequest('user')
     server.addHook('preValidation', async (request, reply) => {
         await validateJwt(request, reply);
+        await validateAdminRole(request, reply)
     })
 
     server.put('/:id/cameras', {

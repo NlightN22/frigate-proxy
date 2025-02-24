@@ -5,9 +5,9 @@ import { mockServices } from '../../../__test__/mocked.services';
 import { testFriagteHostFormatted, testFrigateHostSchema } from '../../../__test__/test.schemas';
 import { cleanAfterTest, httpResponseTest } from '../../../__test__/test.utils';
 import buildServer from '../../../server';
-import FrigateHostUpdates from '../frigate-host.updates';
 import { logger } from '../../../utils/logger';
 import prisma from '../../../utils/prisma';
+import FrigateHostUpdater from '../frigatehost.updater';
 
 async function createHost(fastify: FastifyInstance) {
     const createResponse = await fastify.inject({
@@ -31,7 +31,7 @@ let fastify: FastifyInstance
 
 t.before(() => {
     mockServices(['frigateHostsService'])
-    sinon.stub(FrigateHostUpdates, 'initialize')
+    sinon.stub(FrigateHostUpdater, 'initialize')
     fastify = buildServer()
     cleanAfterTest(fastify, t)
 })

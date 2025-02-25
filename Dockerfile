@@ -14,7 +14,7 @@ COPY  package.json yarn.lock ./
 
 RUN yarn install --production
 
-COPY prisma ./prisma
+COPY ./prisma ./prisma
 RUN yarn prisma generate
 
 COPY ./dist ./dist

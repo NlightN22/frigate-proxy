@@ -13,6 +13,7 @@ lerna-debug.log*
 
 # production
 /build
+build-script*
 /release
 
 # OS

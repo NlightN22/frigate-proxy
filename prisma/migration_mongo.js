@@ -1,7 +1,5 @@
-import dotenv from 'dotenv'
-dotenv.config()
-
-import { MongoClient } from 'mongodb'
+require('dotenv').config();
+const { MongoClient } = require('mongodb');
 
 
 // CreateAt, UpdateAt to CreatedAt, UpdatedAt

@@ -12,7 +12,7 @@
     "lint": "eslint . --ext .ts",
     "test": "dotenv -e .env.test -- tap --node-arg=--require=ts-node/register",
     "test-no-coverage": "dotenv -e .env.test -- tap --node-arg=--require=ts-node/register --disable-coverage",
-    "migration": "ts-node prisma/migration_mongo1.ts",
+    "migration": "ts-node prisma/migration_mongo.js",
     "studio": "yarn prisma studio",
     "updatedb": "prisma db push"
   },

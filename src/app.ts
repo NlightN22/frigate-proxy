@@ -6,7 +6,6 @@ const server = buildServer()
 
 async function main() {
     try {
-
         const fastifyOptions = {
             port: Number(envHostURL.port),
             host: envHostURL.hostname

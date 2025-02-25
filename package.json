@@ -1,6 +1,6 @@
 {
   "name": "frigate-proxy",
-  "version": "0.7.0",
+  "version": "0.9",
   "description": "Proxy server for Frigate NVR",
   "main": "index.js",
   "scripts": {

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Build commands:
-# - $VERSION="0.8"
+# - $VERSION="0.9"
 # - rm dist -r -Force ; yarn build
 # - docker build --pull --rm -t oncharterliz/frigate-proxy:latest -t oncharterliz/frigate-proxy:$VERSION "."
 # - docker save -o ./release/frigate-proxy.$VERSION.tar oncharterliz/frigate-proxy:$VERSION

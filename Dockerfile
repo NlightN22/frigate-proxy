@@ -19,5 +19,5 @@ RUN yarn prisma generate
 
 COPY ./dist ./dist
 
-CMD yarn updatedb && yarn migration &&  && yarn prod
+CMD yarn updatedb && yarn migration && yarn prod
 EXPOSE 4000

@@ -45,11 +45,9 @@ class CameraService {
         // Build an array of filter conditions
         const filters: any[] = [];
 
-
         // Add role filter if adminRole is not empty or user is not admin
         const rolesFilter = await this.getPrismaRolesFilter(userRoles)
         if (rolesFilter) filters.push(rolesFilter)
-
 
         // Add filter by camera name if provided
         if (name.trim() !== '') {
@@ -103,9 +101,6 @@ class CameraService {
         return await this.prismaClient.findUniqueOrThrow({
             where: {
                 id: id
-            },
-            select: {
-                state: true
             }
         })
     }
@@ -333,6 +328,7 @@ class CameraService {
 
     private async isAdminOrEmpty(roles: string[]) {
         const adminRole = await this.configService.getAdminRole()
+        if (!adminRole) logger.warn('CameraService admin role is undefined')
         return !adminRole || roles.includes(adminRole.value)
     }
 }

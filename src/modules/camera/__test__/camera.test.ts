@@ -42,7 +42,7 @@ test('Camera tests', t => {
         mocks.camerasService?.addTagToCamera.resolves(testCameraSchema);
         mocks.camerasService?.deleteCamera.resolves(testCameraSchema);
         mocks.camerasService?.deleteTagFromCamera.resolves(testCameraSchema);
-        mocks.camerasService?.getCameraState.resolves({ state: testCameraSchema.state });
+        mocks.camerasService?.getCameraState.resolves(testCameraSchema);
 
         fastify = Fastify()
         fastify.register(cameraRoutes, { prefix: 'apiv1/cameras' })
@@ -58,10 +58,6 @@ test('Camera tests', t => {
             method: 'GET',
             url: '/apiv1/cameras',
         })
-
-        if (response.statusCode !== 200) {
-            console.log('response', response.body)
-        }
 
         httpResponseTest(t, response)
 
@@ -79,10 +75,6 @@ test('Camera tests', t => {
             url: `/apiv1/cameras/${testCameraSchema.id}`,
         });
 
-        if (response.statusCode !== 200) {
-            console.log('response', response.body)
-        }
-
         httpResponseTest(t, response);
         const jsonResponse = response.json();
         const cleanedTestCamera = cleanObjectByZodSchema(responseCameraSchema, testCameraSchema);
@@ -97,9 +89,6 @@ test('Camera tests', t => {
             url: `/apiv1/cameras/host/${testCameraSchema.frigateHostId}?offset=0&limit=10`,
         });
 
-        if (response.statusCode !== 200) {
-            console.log('response', response.body)
-        }
 
         httpResponseTest(t, response);
         const jsonResponse = response.json();
@@ -115,10 +104,6 @@ test('Camera tests', t => {
             method: 'GET',
             url: `/apiv1/cameras/${testCameraSchema.id}/state`,
         });
-
-        if (response.statusCode !== 200) {
-            console.log('response', response.body)
-        }
 
         httpResponseTest(t, response);
         const jsonResponse = response.json();
@@ -141,9 +126,6 @@ test('Camera tests', t => {
             payload,
         });
 
-        if (response.statusCode !== 201) {
-            console.log('response', response.body)
-        }
 
         httpResponseTest(t, response, 201)
         const jsonResponse = response.json();
@@ -165,10 +147,6 @@ test('Camera tests', t => {
             payload,
         });
 
-        if (response.statusCode !== 400) {
-            console.log('response', response.body)
-        }
-
         httpResponseTest(t, response, 400)
         t.end();
     });
@@ -185,10 +163,6 @@ test('Camera tests', t => {
             payload,
         });
 
-        if (response.statusCode != 201) {
-            console.log('response', response.body)
-        }
-
         httpResponseTest(t, response, 201)
         const jsonResponse = response.json();
         const cleanedTestCamera = cleanObjectByZodSchema(responseCameraSchema, testCameraSchema);
@@ -196,22 +170,16 @@ test('Camera tests', t => {
         t.end();
     });
 
-    t.test('PUT update camera with host and url, should return 400', async (t) => {
+    t.test('PUT update camera without url, should return 400', async (t) => {
         const payload = {
             id: testCameraSchema.id,
             name: testCameraSchema.name,
-            frigateHostId: testCameraSchema.frigateHostId,
-            url: testCameraSchema.url,
         };
         const response = await fastify.inject({
             method: 'PUT',
             url: '/apiv1/cameras',
             payload,
         });
-
-        if (response.statusCode != 400) {
-            console.log('response', response.body)
-        }
 
         httpResponseTest(t, response, 400)
         t.end();
@@ -222,10 +190,6 @@ test('Camera tests', t => {
             method: 'PUT',
             url: `/apiv1/cameras/${testCameraSchema.id}/tag/${testCameraSchema.tagIds[0]}`,
         });
-
-        if (response.statusCode !== 201) {
-            console.log('response', response.body)
-        }
 
         httpResponseTest(t, response, 201)
         const jsonResponse = response.json();
@@ -242,10 +206,6 @@ test('Camera tests', t => {
             // Admin authentication headers can be added here
         });
 
-        if (response.statusCode !== 200) {
-            console.log('response', response.body)
-        }
-
         httpResponseTest(t, response);
         const jsonResponse = response.json();
         const cleanedTestCamera = cleanObjectByZodSchema(responseCameraSchema, testCameraSchema);
@@ -260,10 +220,6 @@ test('Camera tests', t => {
             url: `/apiv1/cameras/${testCameraSchema.id}/tag/${testCameraSchema.tagIds[0]}`,
             // Admin authentication headers can be added here
         });
-
-                if (response.statusCode !== 200) {
-            console.log('response', response.body)
-        }
 
         httpResponseTest(t, response);
         const jsonResponse = response.json();

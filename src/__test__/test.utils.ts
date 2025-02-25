@@ -6,14 +6,19 @@ import zodToJsonSchema from "zod-to-json-schema";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
 import { z } from "zod";
+import sinon from "sinon";
+import * as jwt from 'jsonwebtoken';
 
 
-export function removeProperty(obj, propName) {
+export function removeProperty(obj: any | undefined, propName: string) {
+    if (!obj) return undefined
+    if (!Object.keys(obj).includes(propName)) return obj
     const { [propName]: _, ...rest } = obj;
     return rest;
 }
 
-export function addProperty(obj, propName) {
+export function addProperty(obj: any, propName: string) {
+    if (!obj) return undefined
     return { [propName]: null, ...obj };
 }
 
@@ -25,10 +30,10 @@ export function cleanAfterTest(fastify: FastifyInstance, t: Test) {
     })
 }
 
-export function httpResponseTest(t: Test, response: Response, statusCode: number = 200) {
-    t.equal(response.statusCode, statusCode)
+export function httpResponseTest(t: Test, response: Response, wantedStatusCode: number = 200) {
+    if (wantedStatusCode !== response.statusCode) console.error(response)
+    t.equal(response.statusCode, wantedStatusCode)
     t.equal(response.headers['content-type'], 'application/json; charset=utf-8')
-
 }
 
 export function cleanObjectByZodSchema(zodSchema: z.ZodType<any>, obj: object) {
@@ -45,7 +50,7 @@ export function cleanObjectByZodSchema(zodSchema: z.ZodType<any>, obj: object) {
 
 export function cleanFromReferencesIds(obj: any) {
     const references = ['frigateHostId', 'rolesIDs', 'tagIds']
-    references.forEach( prop => {
+    references.forEach(prop => {
         obj = removeProperty(obj, prop)
     })
     return obj
@@ -53,7 +58,7 @@ export function cleanFromReferencesIds(obj: any) {
 
 export function matchWOTimeFields(t: Test, found: any, wanted: any) {
     const properties = ['updatedAt', 'createdAt']
-    properties.forEach( prop => {
+    properties.forEach(prop => {
         found = removeProperty(found, prop)
         wanted = removeProperty(wanted, prop)
     })
@@ -73,3 +78,34 @@ export function sameObjectsFieldsTest(
         message
     );
 };
+
+
+export type JwtTestResponse = {
+    sub: string,
+    name: string,
+    realm_access: { roles: string[] },
+}
+
+export function mockjJWTverify(
+    jwtTestResponse: JwtTestResponse,
+    error: boolean = false) {
+    const jwt = require('jsonwebtoken');
+
+    return sinon.stub(jwt, 'verify').callsFake((
+        token: string,
+        secretOrPublicKey: jwt.Secret | jwt.GetPublicKeyOrSecret,
+        options: jwt.VerifyOptions | undefined,
+        callback?: jwt.VerifyCallback
+    ) => {
+        if (typeof callback === 'function') {
+            if (error) {
+                return callback(new jwt.JsonWebTokenError('Invalid token'), undefined);
+            }
+            return callback(null, {
+                sub: jwtTestResponse.sub,
+                name: jwtTestResponse.name,
+                realm_access: jwtTestResponse.realm_access
+            });
+        }
+    });
+}

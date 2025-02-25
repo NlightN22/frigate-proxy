@@ -29,7 +29,7 @@ export async function cameraRoutes(server: FastifyInstance) {
                 200: $ref("responseCameraStateSchema")
             }
         }
-    }, controller.getCameraHandler)
+    }, controller.getCameraStateHandler)
 
     // Routes for authenticated users
     server.register(async function (userRoutes) {

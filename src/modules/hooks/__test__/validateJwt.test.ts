@@ -4,6 +4,8 @@ import { test } from 'tap';
 import { mockServices } from '../../../__test__/mocked.services';
 import * as jwt from 'jsonwebtoken';
 import { validateJwt } from '../jwks-rsa.prehandler';
+import { mockjJWTverify } from '../../../__test__/test.utils';
+import { error } from 'console';
 
 const mockedOIDPConfig = {
     clientId: 'testId',
@@ -54,23 +56,7 @@ test('validateJwt tests', t => {
 
     t.test('should pass with a valid token', async (t) => {
 
-        // Import jsonwebtoken using require to allow stubbing
-        const jwt = require('jsonwebtoken');
-
-        sinon.stub(jwt, 'verify').callsFake((
-            token: string,
-            secretOrPublicKey: jwt.Secret | jwt.GetPublicKeyOrSecret,
-            options: jwt.VerifyOptions | undefined,
-            callback?: jwt.VerifyCallback
-        ) => {
-            if (typeof callback === 'function') {
-                callback(null, {
-                    sub: testJWTResponse.sub,
-                    name: testJWTResponse.name,
-                    realm_access: testJWTResponse.realm_access
-                });
-            }
-        });
+        mockjJWTverify(testJWTResponse)
 
         const response = await fastify.inject({
             method: 'GET',
@@ -79,7 +65,6 @@ test('validateJwt tests', t => {
         });
 
         t.equal(response.statusCode, 200, 'Should pass validation');
-        console.log('lastRequest?.user', lastRequest?.user)
         t.ok(lastRequest?.user, 'User should be set in request');
         t.equal(lastRequest?.user?.id, testJWTResponse.sub);
         t.equal(lastRequest?.user?.name, testJWTResponse.name);
@@ -104,20 +89,7 @@ test('validateJwt tests', t => {
     t.test('should return 401 when token is invalid', async (t) => {
         const fastify = createTestServer();
 
-        // Import jsonwebtoken using require to allow stubbing
-        const jwt = require('jsonwebtoken');
-
-        const jwtStub = sinon.stub(jwt, 'verify').callsFake((
-            token: string,
-            key: jwt.Secret | jwt.GetPublicKeyOrSecret,
-            options: jwt.VerifyOptions | undefined,
-            callback?: jwt.VerifyCallback
-        ) => {
-            if (typeof callback === 'function') {
-                // Using JsonWebTokenError to satisfy the expected error type
-                callback(new jwt.JsonWebTokenError('Invalid token'), undefined);
-            }
-        });
+        mockjJWTverify(testJWTResponse, true)
 
         const response = await fastify.inject({
             method: 'GET',
@@ -126,9 +98,6 @@ test('validateJwt tests', t => {
         });
 
         t.equal(response.statusCode, 401, 'Should return 401 when token is invalid');
-
-        jwtStub.restore();
-        t.end()
     });
 
     t.end()

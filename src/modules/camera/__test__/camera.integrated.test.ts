@@ -1,13 +1,15 @@
-import { FastifyInstance, LightMyRequestResponse } from "fastify";
+import { faker } from '@faker-js/faker';
+import { FastifyInstance } from "fastify";
+import { test } from "tap";
 import { mockServices } from "../../../__test__/mocked.services";
-import { cleanFromReferencesIds, cleanObjectByZodSchema, httpResponseTest, matchWOTimeFields, sameObjectsFieldsTest } from "../../../__test__/test.utils";
+import { cleanObjectByZodSchema, httpResponseTest, matchWOTimeFields, mockjJWTverify, sameObjectsFieldsTest } from "../../../__test__/test.utils";
 import buildServer from "../../../server";
 import prisma from "../../../utils/prisma";
-import { responseCameraSchema } from "../camera.schema";
-import { faker } from '@faker-js/faker';
-import { test } from "tap";
-import { Camera } from "@prisma/client";
 import { responseCameraStateSchema } from "../camera.core.schema";
+import { responseCameraSchema } from "../camera.schema";
+import { MockedServices } from '../../../__test__/test.types';
+import Sinon from 'sinon';
+import { promisify } from 'util';
 
 const testCameraSchema = {
     tags: [],
@@ -38,22 +40,57 @@ const dbCamera = {
     tagIds: [faker.database.mongodbObjectId()]
 }
 
+const adminJWTResponse = {
+    sub: '12345',
+    name: 'Test User',
+    realm_access: { roles: ['admin'] }
+}
+
+const userJWTResponse = {
+    sub: '12345',
+    name: 'Test User',
+    realm_access: { roles: ['user'] }
+}
+
+const mockedOIDPConfig = {
+    clientId: 'testId',
+    clientSecret: 'testSecret',
+    clientUsername: 'testUsername',
+    clientPassword: 'testPassword',
+    clientURL: 'https://fake-oidc.com/',
+}
+
+const adminRole = {
+    id: faker.database.mongodbObjectId(),
+    key: faker.database.mongodbObjectId(),
+    value: 'admin',
+    encrypted: false,
+    description: faker.book.genre(),
+}
+
 test('Camera integrated tests', t => {
     let fastify: FastifyInstance
+    let mocks: MockedServices
+    let jwtmock: Sinon.SinonStub<any[], any>
 
     t.before(() => {
-        const mocks = mockServices(['camerasService'])
+        mocks = mockServices(['camerasService'])
         fastify = buildServer()
+        mocks.configService?.getAdminRole.resolves(adminRole)
     })
 
     t.beforeEach(async (t) => {
         await prisma.camera.create({
             data: dbCamera
         })
+
+        jwtmock = mockjJWTverify(adminJWTResponse)
+        mocks.configOIDPService?.getDecryptedOIDPConfig.resolves(mockedOIDPConfig);
     })
 
     t.afterEach(async (t) => {
         await prisma.camera.deleteMany({})
+        jwtmock.restore()
     })
 
     t.test('POST create camera', async (t) => {
@@ -63,7 +100,8 @@ test('Camera integrated tests', t => {
             payload: {
                 name: testCameraSchema.name,
                 url: testCameraSchema.url,
-            }
+            },
+            headers: { authorization: 'Bearer valid_token' },
         })
         const postCameraResponseJson = postCameraResponse.json()
         httpResponseTest(t, postCameraResponse, 201)
@@ -73,10 +111,11 @@ test('Camera integrated tests', t => {
         sameObjectsFieldsTest(t, postCameraResponseJson, cleanedCameraResponse)
     })
 
-    t.test('GET cameras', async (t) => {
+    t.test('GET cameras, admin user', async (t) => {
         const response = await fastify.inject({
             method: 'GET',
             url: '/apiv1/cameras',
+            headers: { authorization: 'Bearer valid_token' },
         })
 
         httpResponseTest(t, response)
@@ -85,10 +124,23 @@ test('Camera integrated tests', t => {
         matchWOTimeFields(t, firstElement, cleanedCamera)
     })
 
+    t.test('GET cameras, not admin user, should return empty list', async (t) => {
+        jwtmock.restore()
+        jwtmock = mockjJWTverify(userJWTResponse)
+        const response = await fastify.inject({
+            method: 'GET',
+            url: '/apiv1/cameras',
+            headers: { authorization: 'Bearer valid_token' },
+        })
+        httpResponseTest(t, response)
+        t.ok(response.json().length === 0)
+    })
+
     t.test('GET camera by id', async (t) => {
         const response = await fastify.inject({
             method: 'GET',
             url: `/apiv1/cameras/${dbCamera.id}`,
+            headers: { authorization: 'Bearer valid_token' },
         })
 
         httpResponseTest(t, response)
@@ -99,7 +151,8 @@ test('Camera integrated tests', t => {
     t.test('GET cameras by host id', async (t) => {
         const response = await fastify.inject({
             method: 'GET',
-            url: `/apiv1/cameras/host/${dbCamera.frigateHostId}`
+            url: `/apiv1/cameras/host/${dbCamera.frigateHostId}`,
+            headers: { authorization: 'Bearer valid_token' },
         })
 
         httpResponseTest(t, response)
@@ -113,7 +166,6 @@ test('Camera integrated tests', t => {
             method: 'GET',
             url: `/apiv1/cameras/${dbCamera.id}/state`,
         })
-
 
         httpResponseTest(t, response)
         const cleanedCamera = cleanObjectByZodSchema(responseCameraStateSchema, dbCamera)
@@ -131,6 +183,7 @@ test('Camera integrated tests', t => {
             method: 'POST',
             url: '/apiv1/cameras',
             payload,
+            headers: { authorization: 'Bearer valid_token' },
         });
 
         httpResponseTest(t, response, 400)
@@ -146,6 +199,7 @@ test('Camera integrated tests', t => {
             method: 'PUT',
             url: '/apiv1/cameras',
             payload,
+            headers: { authorization: 'Bearer valid_token' },
         });
 
         if (response.statusCode !== 201) {
@@ -169,6 +223,7 @@ test('Camera integrated tests', t => {
             method: 'PUT',
             url: '/apiv1/cameras',
             payload,
+            headers: { authorization: 'Bearer valid_token' },
         });
 
         if (response.statusCode != 400) {
@@ -182,6 +237,7 @@ test('Camera integrated tests', t => {
         const response = await fastify.inject({
             method: 'PUT',
             url: `/apiv1/cameras/${dbCamera.id}/tag/${dbCamera.tagIds[0]}`,
+            headers: { authorization: 'Bearer valid_token' },
         });
 
         httpResponseTest(t, response, 201)
@@ -190,132 +246,42 @@ test('Camera integrated tests', t => {
     })
 
 
-    // t.test('DELETE camera', async (t) => {
-        
-    // })
+    t.test('DELETE camera', async (t) => {
+        const response = await fastify.inject({
+            method: 'DELETE',
+            url: `/apiv1/cameras/${dbCamera.id}`,
+            headers: { authorization: 'Bearer valid_token' },
+        })
 
-    // t.test('DELETE tag from camera', async (t) => {
-    // })
+        httpResponseTest(t, response)
+        const cleanedCamera = cleanObjectByZodSchema(responseCameraSchema, dbCamera)
+        matchWOTimeFields(t, response.json(), cleanedCamera)
+    })
+
+    t.test('DELETE camera, by user, should return 403', async (t) => {
+        jwtmock.restore()
+        jwtmock = mockjJWTverify(userJWTResponse)
+        const response = await fastify.inject({
+            method: 'DELETE',
+            url: `/apiv1/cameras/${dbCamera.id}`,
+            headers: { authorization: 'Bearer valid_token' },
+        })
+
+        httpResponseTest(t, response, 403)
+        t.match(response.json(), {"error":"Forbidden"})
+    })
+
+    t.test('DELETE tag from camera', async (t) => {
+        const response = await fastify.inject({
+            method: 'DELETE',
+            url: `/apiv1/cameras/${dbCamera.id}/tag/${dbCamera.tagIds[0]}`,
+            headers: { authorization: 'Bearer valid_token' },
+        });
+
+        httpResponseTest(t, response)
+        const cleanedCamera = cleanObjectByZodSchema(responseCameraStateSchema, dbCamera)
+        matchWOTimeFields(t, response.json(), cleanedCamera)
+    })
 
     t.end()
 })
-
-
-// test(' POST camera - create camera with test DB', async (t) => {
-//     mockServices(['camerasService'])
-//     const fastify = Fastify
-
-//     cleanAfterTest(fastify, t)
-
-//     const createResponse = await postCamera(fastify)
-
-//     httpResponseTest(t, createResponse, 201)
-
-//     const json = createResponse.json()
-
-//     t.equal(json.name, testCameraSchema.name)
-//     t.equal(json.url, testCameraSchema.url)
-// })
-
-// test(' GET cameras - create by POST and get cameras from DB', async (t) => {
-//     mockServices(['camerasService'])
-//     const fastify = buildServer()
-
-//     cleanAfterTest(fastify, t)
-
-//     const createResponse = await postCamera(fastify)
-
-//     const jsonCreate = createResponse.json()
-//     t.equal(jsonCreate.name, testCameraSchema.name)
-//     t.equal(jsonCreate.url, testCameraSchema.url)
-
-//     const response = await fastify.inject({
-//         method: 'GET',
-//         url: '/apiv1/cameras',
-//     })
-
-//     httpResponseTest(t, response)
-
-//     const jsonGet = response.json()
-//     t.equal(jsonGet[0].name, testCameraSchema.name)
-//     t.equal(jsonGet[0].url, testCameraSchema.url)
-// })
-// test(' GET camera - create by POST and get camera from DB', async (t) => {
-//     mockServices(['camerasService'])
-//     const fastify = buildServer()
-
-//     cleanAfterTest(fastify, t)
-
-//     const createResponse = await postCamera(fastify)
-
-//     const jsonCreate = createResponse.json()
-//     t.hasOwnPropsOnly(jsonCreate, Object.getOwnPropertyNames(responseExample))
-//     t.equal(jsonCreate.name, testCameraSchema.name)
-//     t.equal(jsonCreate.url, testCameraSchema.url)
-
-//     const id = jsonCreate.id
-
-//     const response = await fastify.inject({
-//         method: 'GET',
-//         url: `/apiv1/cameras/${id}`,
-//     })
-
-//     httpResponseTest(t, response)
-
-//     const jsonGet = response.json()
-//     t.match(jsonGet, jsonCreate)
-// })
-// test(' PUT camera - create by POST and PUT changes to DB', async (t) => {
-//     mockServices(['camerasService'])
-//     const fastify = buildServer()
-
-//     cleanAfterTest(fastify, t)
-
-//     const createResponse = await postCamera(fastify)
-
-//     const jsonCreate = createResponse.json()
-//     t.hasOwnPropsOnly(jsonCreate, Object.getOwnPropertyNames(responseExample))
-//     t.equal(jsonCreate.name, testCameraSchema.name)
-//     t.equal(jsonCreate.url, testCameraSchema.url)
-
-//     const { id, name, url } = jsonCreate
-
-//     const response = await fastify.inject({
-//         method: 'PUT',
-//         url: `/apiv1/cameras/`,
-//         payload: { id, name, url }
-//     })
-
-//     httpResponseTest(t, response, 201)
-
-//     const jsonGet = response.json()
-//     const jsonGetWithoutupdatedAt = removeProperty(jsonGet, 'updatedAt')
-//     const jsonCreateWithoutupdatedAt = removeProperty(jsonCreate, 'updatedAt')
-//     t.matchOnly(jsonGetWithoutupdatedAt, jsonCreateWithoutupdatedAt)
-// })
-// test(' DEL camera - create by POST and DEL from DB', async (t) => {
-//     mockServices(['camerasService'])
-//     const fastify = buildServer()
-
-//     cleanAfterTest(fastify, t)
-
-//     const createResponse = await postCamera(fastify)
-
-//     const jsonCreate = createResponse.json()
-//     t.hasOwnPropsOnly(jsonCreate, Object.getOwnPropertyNames(responseExample))
-//     t.equal(jsonCreate.name, testCameraSchema.name)
-//     t.equal(jsonCreate.url, testCameraSchema.url)
-
-//     const response = await fastify.inject({
-//         method: 'DELETE',
-//         url: `/apiv1/cameras/${jsonCreate.id}`,
-//     })
-
-//     httpResponseTest(t, response)
-
-//     const jsonDelete = response.json()
-
-//     const jsonGetWithoutupdatedAt = removeProperty(jsonDelete, 'updatedAt')
-//     const jsonCreateWithoutupdatedAt = removeProperty(jsonCreate, 'updatedAt')
-//     t.matchOnly(jsonGetWithoutupdatedAt, jsonCreateWithoutupdatedAt)
-// })

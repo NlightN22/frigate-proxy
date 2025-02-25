@@ -1,10 +1,8 @@
-import { exec } from "child_process";
-import { envHostURL } from "./consts"
-import buildServer from "./server"
-import { logger } from "./utils/logger"
+import { envHostURL } from "./consts";
+import buildServer from "./server";
+import { logger } from "./utils/logger";
 
 const server = buildServer()
-
 
 async function main() {
     try {

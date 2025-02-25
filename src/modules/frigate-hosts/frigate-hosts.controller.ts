@@ -75,8 +75,8 @@ class FrigateHostController {
         Body: schemas.DeleteHostsSchema
     }>, rep: FastifyReply) => {
         const parsed = schemas.deleteHostsSchema.parse(req.body)
-        const mapped = parsed.map(host => host.id)
-        rep.send(await this.frigateHostsService.deleteFrigateHostsById(mapped))
+        const ids = parsed.map(host => host.id)
+        rep.send(await this.frigateHostsService.deleteFrigateHostsById(ids))
     })
 }
 

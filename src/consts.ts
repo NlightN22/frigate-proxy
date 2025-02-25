@@ -1,5 +1,4 @@
 import dotenv from 'dotenv'
-import z from 'zod'
 dotenv.config()
 export const envHostURL = new URL(process.env.SERVER || 'http://localhost:4000')
 export const envLogLevel = process.env.LOG_LEVEL || 'info'

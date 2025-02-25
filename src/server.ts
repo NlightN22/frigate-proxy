@@ -7,7 +7,6 @@ import Fastify from "fastify"
 import qs from 'qs'
 import { envRateLimit, envTimeWindow } from "./consts"
 import { cameraRoutes } from "./modules/camera/camera.route"
-import { cameraSchemas } from "./modules/camera/camera.schema"
 import { configRoutes } from "./modules/config/config.route"
 import { configSchemas } from "./modules/config/config.schema"
 import { configOIDPSchemas } from "./modules/config/oidp/config.oidp.schema"

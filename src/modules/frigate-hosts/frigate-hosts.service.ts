@@ -128,13 +128,22 @@ class FrigateHostsService {
             }
         });
     }
-    async deleteFrigateHostsById(input: string[]) {
-        return this.prismaClient.deleteMany({
+    async deleteFrigateHostsById(ids: string[]) {
+        const cameras = this.prismaClient.findMany({
             where: {
-                id: { in: input },
+                id: { in: ids}
+            },
+            include: {
+                cameras: true
+            }
+        })
+        this.prismaClient.deleteMany({
+            where: {
+                id: { in: ids },
                 cameras: {}
             },
         });
+        return cameras
     }
 
     async getHostOnly(host: string): Promise<string> {

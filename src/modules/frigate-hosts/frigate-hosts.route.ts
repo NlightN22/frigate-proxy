@@ -12,25 +12,6 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
     server.addHook('onRequest', logRequest);
     server.addHook('onResponse', logResponse);
 
-    // Routes for unauthenticated users
-    server.get('/:id/cameras', {
-        schema: {
-            params: getHostByIdSchema,
-            response: {
-                200: $ref("responseHostAndCamerasSchema")
-            }
-        }
-    }, controller.getHostHandler)
-
-    server.get('/by-name/:name/cameras', {
-        schema: {
-            params: getHostByNameSchema,
-            response: {
-                200: $ref("responseHostAndCamerasSchema")
-            }
-        }
-    }, controller.getHostByNameHandler)
-
     server.register(async function (userRoutes) {
         userRoutes.decorateRequest('user')
         userRoutes.addHook('preValidation', async (request, reply) => {
@@ -44,6 +25,24 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
                 }
             }
         }, controller.getHostsHandler)
+
+        userRoutes.get('/:id/cameras', {
+            schema: {
+                params: getHostByIdSchema,
+                response: {
+                    200: $ref("responseHostAndCamerasSchema")
+                }
+            }
+        }, controller.getHostHandler)
+    
+        userRoutes.get('/by-name/:name/cameras', {
+            schema: {
+                params: getHostByNameSchema,
+                response: {
+                    200: $ref("responseHostAndCamerasSchema")
+                }
+            }
+        }, controller.getHostByNameHandler)
 
         userRoutes.get('/:id/status', {
             schema: {
@@ -70,7 +69,6 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
             await validateJwt(request, reply);
             await validateAdminRole(request, reply);
         })
-
 
         adminRoutes.put('/', {
             schema: {
@@ -103,9 +101,9 @@ export async function frigateHostsRoutes(server: FastifyInstance) {
         adminRoutes.delete('/', {
             schema: {
                 body: $ref('deleteHostsSchema'),
-                // response: {
-                //     201: $ref("responseHostsSchema")
-                // }
+                response: {
+                    201: $ref("responseHostsSchema")
+                }
             },
         }, controller.deleteHostsHandler)
     })
